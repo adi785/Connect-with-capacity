@@ -262,12 +262,13 @@
 
       // Also call backend API if reachable
       try {
-        if (window.API_BASE) {
-          fetch(window.API_BASE + "/admin/approvals/" + userId + "/decision", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ decision: newStatus })
-          }).catch(function () {});
+        if (window.CapacityConnectAPI) {
+          window.CapacityConnectAPI.post(
+            "/admin/approvals/" + userId + "/decision",
+            { decision: newStatus }
+          ).catch(function (apiErr) {
+            console.warn("Backend approval sync failed:", apiErr);
+          });
         }
       } catch (e) {}
 

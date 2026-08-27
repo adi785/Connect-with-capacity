@@ -1,0 +1,542 @@
+/* ==========================================================================
+   CAPACITY CONNECT — responsive.css
+   Target widths: 1920 / 1440 / 1024 / 768 / 480 / 375
+   Loaded last so these rules win without !important.
+   ========================================================================== */
+
+/* ==========================================================================
+   Very large screens (1920px+) — cap the shell, keep the nav proportional
+   ========================================================================== */
+
+@media (min-width: 1700px) {
+  :root {
+    --shell: 1400px;
+    --nav-width: 84%;
+  }
+
+  .visual-stage {
+    aspect-ratio: 16 / 9;
+  }
+}
+
+/* ==========================================================================
+   1440px — default desktop, no overrides needed
+   ========================================================================== */
+
+/* ==========================================================================
+   <= 1200px — tighten the navbar and drop learning areas to 3 across
+   ========================================================================== */
+
+@media (max-width: 1200px) {
+  :root {
+    --nav-width: 93%;
+  }
+
+  .nav-pill {
+    padding-left: 18px;
+  }
+
+  .nav-links {
+    gap: 2px;
+  }
+
+  .nav-links a {
+    font-size: 0.875rem;
+  }
+
+  .areas__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .news__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ==========================================================================
+   <= 1024px (tablet landscape)
+   Nav collapses to the hamburger; hero stacks to a single column.
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  :root {
+    --nav-width: 94%;
+  }
+
+  /* --- Navbar --------------------------------------------------------- */
+  .nav-links,
+  .nav-actions {
+    display: none;
+  }
+
+  .nav-toggle {
+    display: grid;
+  }
+
+  .nav-pill {
+    justify-content: space-between;
+    padding: 10px 12px 10px 18px;
+  }
+
+  /* --- Hero ----------------------------------------------------------- */
+  .hero__grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .hero__copy {
+    max-width: 640px;
+  }
+
+  .hero__lede {
+    max-width: 58ch;
+  }
+
+  .visual-stage {
+    aspect-ratio: 16 / 8.6;
+  }
+
+  /* Decorations get out of the way */
+  .hero__blob--blue {
+    top: 40px;
+    right: 8%;
+  }
+
+  .hero__bar--blue {
+    right: 6%;
+  }
+
+  .hero__dots {
+    display: none;
+  }
+
+  /* --- Statistics: 5 -> 3 + 2 ----------------------------------------- */
+  .stats__grid {
+    grid-template-columns: repeat(3, 1fr);
+    row-gap: 26px;
+  }
+
+  /* --- About ---------------------------------------------------------- */
+  .about__grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+
+  .about__cards .feature:nth-child(2),
+  .about__cards .feature:nth-child(4) {
+    transform: none;
+  }
+
+  .about__cards .feature:nth-child(2):hover,
+  .about__cards .feature:nth-child(4):hover {
+    transform: translateY(-6px);
+  }
+
+  /* --- Journey: horizontal -> 2-up grid ------------------------------- */
+  .journey__track {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px 24px;
+  }
+
+  .journey__track::before {
+    display: none;
+  }
+
+  /* --- Audiences ------------------------------------------------------ */
+  .audiences__grid {
+    grid-template-columns: 1fr;
+    max-width: 560px;
+    margin-inline: auto;
+  }
+
+  /* --- Footer --------------------------------------------------------- */
+  .site-footer__grid {
+    grid-template-columns: repeat(3, 1fr);
+    row-gap: 36px;
+  }
+
+  .site-footer__brand {
+    grid-column: 1 / -1;
+  }
+
+  .site-footer__desc {
+    max-width: 46ch;
+  }
+}
+
+/* ==========================================================================
+   <= 900px — learning areas to 2 across
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .areas__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ==========================================================================
+   <= 768px (tablet portrait)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  :root {
+    --nav-width: 94%;
+    --nav-height: 66px;
+    --section-y: 56px;
+  }
+
+  /* Logo: keep the CC mark, drop the descriptor line to save width */
+  .identity__text small {
+    display: none;
+  }
+
+  .identity__text strong {
+    font-size: 13.5px;
+  }
+
+  .hero {
+    padding-top: 20px;
+  }
+
+  .hero__title {
+    line-height: 1.12;
+  }
+
+  .hero__cta .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  /* Statistics -> 2 columns */
+  .stats__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Announcements -> single column */
+  .news__grid {
+    grid-template-columns: 1fr;
+    max-width: 560px;
+    margin-inline: auto;
+  }
+
+  /* Footer -> 2 columns */
+  .site-footer__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .site-footer__bar-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  /* Section headings left-align better on narrow screens */
+  .section-head {
+    text-align: left;
+    margin-inline: 0;
+  }
+
+  .cta__title {
+    text-align: center;
+  }
+}
+
+/* ==========================================================================
+   <= 600px — single-column everything
+   ========================================================================== */
+
+@media (max-width: 600px) {
+  .shell {
+    width: 90%;
+  }
+
+  .about__cards,
+  .areas__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .journey__track {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  /* Vertical timeline with a connector down the left */
+  .step {
+    display: grid;
+    grid-template-columns: 54px 1fr;
+    column-gap: 18px;
+    padding-bottom: 28px;
+    text-align: left;
+  }
+
+  .step:last-child {
+    padding-bottom: 0;
+  }
+
+  .step__num {
+    grid-row: 1 / span 2;
+    margin: 0;
+  }
+
+  /* Connector segment between consecutive steps */
+  .step:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    top: 58px;
+    left: 26px;
+    bottom: 4px;
+    width: 2px;
+    border-radius: 2px;
+    background: linear-gradient(
+      to bottom,
+      var(--primary-blue),
+      var(--accent-orange)
+    );
+    opacity: 0.26;
+  }
+
+  .step h3 {
+    align-self: center;
+  }
+}
+
+/* ==========================================================================
+   <= 480px (large phone)
+   ========================================================================== */
+
+@media (max-width: 480px) {
+  :root {
+    --fs-hero: 2.15rem;
+    --fs-h2: 1.6rem;
+    --radius-pill: 30px;
+    --section-y: 48px;
+  }
+
+  .site-nav {
+    padding-top: 12px;
+  }
+
+  .nav-pill {
+    padding: 8px 10px 8px 14px;
+    border-radius: 30px;
+  }
+
+  .identity__mark {
+    width: 36px;
+    height: 36px;
+    font-size: 12px;
+  }
+
+  .identity__text strong {
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
+  }
+
+  .nav-toggle {
+    width: 42px;
+    height: 42px;
+  }
+
+  .mobile-nav {
+    border-radius: 14px;
+  }
+
+  .mobile-nav__actions {
+    grid-template-columns: 1fr;
+  }
+
+  /* Hero */
+  .hero__eyebrow {
+    font-size: 0.9375rem;
+  }
+
+  .hero__cta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .visual-frame {
+    padding: 7px;
+  }
+
+  .visual-stage {
+    aspect-ratio: 4 / 3.4;
+    padding: 16px 18px;
+  }
+
+  /* The chips get cramped — keep only the clearest one */
+  .chip--2 {
+    display: none;
+  }
+
+  .chip {
+    padding: 6px 9px;
+  }
+
+  /* Statistics -> single column, horizontal rows read better */
+  .stats__grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    max-width: 340px;
+    margin-inline: auto;
+  }
+
+  .stat__icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  /* Cards */
+  .feature,
+  .area,
+  .news-card {
+    padding: 20px 18px;
+  }
+
+  .audience {
+    padding: 24px 20px;
+  }
+
+  .audience .btn,
+  .about__copy .btn {
+    width: 100%;
+  }
+
+  /* Footer */
+  .site-footer__grid {
+    grid-template-columns: 1fr;
+    row-gap: 30px;
+  }
+
+  /* Accessibility widget stays reachable */
+  .a11y {
+    right: 14px;
+    bottom: 16px;
+  }
+
+  .a11y__btn {
+    width: 48px;
+    height: 48px;
+  }
+
+  .a11y__panel {
+    width: 190px;
+  }
+}
+
+/* ==========================================================================
+   <= 375px (iPhone SE / small Android)
+   ========================================================================== */
+
+@media (max-width: 375px) {
+  :root {
+    --fs-hero: 1.95rem;
+    --fs-h2: 1.45rem;
+  }
+
+  .shell {
+    width: 92%;
+  }
+
+  .identity {
+    gap: 9px;
+  }
+
+  .identity__mark {
+    width: 33px;
+    height: 33px;
+    font-size: 11px;
+  }
+
+  .identity__text strong {
+    font-size: 11.5px;
+    letter-spacing: 0.02em;
+  }
+
+  .hero__lede {
+    font-size: 0.9375rem;
+  }
+
+  .social-list {
+    gap: 9px;
+  }
+
+  .social-list a {
+    width: 38px;
+    height: 38px;
+  }
+
+  .social-list svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .visual-stage {
+    aspect-ratio: 4 / 3.8;
+  }
+
+  .visual-stage__brand {
+    font-size: 0.6875rem;
+    letter-spacing: 0.15em;
+  }
+
+  /* Chips would overlap the figures at this width */
+  .chip--3 {
+    display: none;
+  }
+
+  .step {
+    grid-template-columns: 46px 1fr;
+    column-gap: 14px;
+  }
+
+  .step__num {
+    width: 46px;
+    height: 46px;
+    font-size: 0.875rem;
+  }
+
+  .step:not(:last-child)::before {
+    top: 50px;
+    left: 22px;
+  }
+}
+
+/* ==========================================================================
+   Landscape phones — keep the sticky navbar from eating the viewport
+   ========================================================================== */
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .site-nav {
+    position: static;
+  }
+
+  .a11y {
+    bottom: 12px;
+  }
+}
+
+/* ==========================================================================
+   Print
+   ========================================================================== */
+
+@media print {
+  .site-nav,
+  .nav-scrim,
+  .a11y,
+  .hero__slider,
+  .skip-link {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .stats,
+  .cta,
+  .site-footer {
+    background: #fff !important;
+    color: #000 !important;
+  }
+}

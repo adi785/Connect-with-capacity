@@ -1,0 +1,120 @@
+:root {
+  --navy: #123b5d;
+  --saffron: #e67e22;
+  --green: #2e7d32;
+  --page: #f4f6f8;
+  --text: #263238;
+  --muted: #607d8b;
+  --border: #d9e0e5;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  
+  min-height: 100vh;
+  margin: 0;
+
+  display: flex;
+  flex-direction: column;
+  background: var(--page);
+  color: var(--text);
+  font-family: "Noto Sans", "Noto Sans Devanagari", Arial, sans-serif;
+}
+
+button, input { font: inherit; }
+button { cursor: pointer; }
+
+.national-strip { height: 4px; display: flex; }
+.national-strip span { flex: 1; }
+.national-strip span:nth-child(1) { background: var(--saffron); }
+.national-strip span:nth-child(2) { background: #fff; }
+.national-strip span:nth-child(3) { background: var(--green); }
+
+.site-header {
+  min-height: 82px;
+  padding: 14px clamp(20px, 5vw, 72px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+
+.identity { display: flex; align-items: center; gap: 12px; color: var(--navy); text-decoration: none; }
+.identity__mark { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--navy); border-radius: 3px; font-size: 13px; font-weight: 700; letter-spacing: .06em; }
+.identity__text strong { display: block; font-size: 15px; letter-spacing: .06em; line-height: 1.3; }
+.identity__text small { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
+.language { display: flex; gap: 8px; color: #90a0a8; font-size: 13px; }
+.language a, .form-actions a, .account-note a, footer a { color: var(--navy); font-weight: 600; text-decoration: none; }
+.language a:hover, .form-actions a:hover, .account-note a:hover, footer a:hover { text-decoration: underline; }
+
+main { flex: 1; display: grid; place-items: center; padding: 42px 20px 30px; }
+
+.auth-card {
+  width: min(100%, 470px);
+  padding: 31px 34px 19px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 5px 16px rgba(38, 50, 56, .07);
+}
+
+.auth-card__heading { padding-bottom: 21px; border-bottom: 1px solid #e5eaed; }
+.portal-name { margin: 0; color: var(--navy); font-size: 12px; font-weight: 700; letter-spacing: .1em; }
+.portal-type { margin: 4px 0 18px; color: var(--muted); font-size: 13px; }
+h1, h2 { margin: 0; color: var(--text); }
+h1 { font-size: 24px; line-height: 1.35; }
+.intro-copy, .two-factor > p:not(.portal-name) { margin: 7px 0 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+.role-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 22px 0; }
+.role-tab { min-height: 39px; padding: 8px; border: 1px solid var(--border); border-radius: 4px; background: #fff; color: var(--navy); font-size: 13px; font-weight: 600; transition: background-color .15s, color .15s, border-color .15s; }
+.role-tab:hover { border-color: #99aab4; }
+.role-tab.is-selected { border-color: var(--navy); background: var(--navy); color: #fff; }
+
+h2 { margin-bottom: 17px; font-size: 18px; }
+.field + .field { margin-top: 14px; }
+.field label { display: block; margin-bottom: 6px; color: #43545d; font-size: 13px; font-weight: 600; }
+.field input:not(.otp-input) { width: 100%; height: 43px; padding: 9px 11px; border: 1px solid #bac7ce; border-radius: 4px; background: #fff; color: var(--text); font-size: 14px; }
+input:focus { outline: 2px solid rgba(18, 59, 93, .18); border-color: var(--navy) !important; }
+.password-control { position: relative; }
+.password-control input { padding-right: 76px !important; }
+.password-control button { position: absolute; top: 0; right: 0; height: 43px; padding: 0 11px; display: flex; align-items: center; gap: 5px; border: 0; background: transparent; color: var(--navy); font-size: 12px; font-weight: 600; }
+.password-control svg { width: 17px; height: 17px; }
+.field-error { min-height: 0; margin: 4px 0 0; color: #b42318; font-size: 12px; }
+.field-error:empty { display: none; }
+
+.form-actions { margin: 17px 0 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; }
+.remember { display: flex; align-items: center; gap: 7px; color: #52646e; white-space: nowrap; }
+.remember input { width: 14px; height: 14px; margin: 0; accent-color: var(--navy); }
+.submit-button { width: 100%; min-height: 43px; border: 1px solid var(--navy); border-radius: 4px; background: var(--navy); color: #fff; font-size: 14px; font-weight: 600; }
+.submit-button:hover { background: #0e314e; }
+.submit-button:disabled { cursor: wait; opacity: .78; }
+.account-note { min-height: 20px; margin: 15px 0 0; color: var(--muted); font-size: 13px; }
+
+.two-factor h1 { margin-top: 14px; }
+.otp-fields { display: flex; justify-content: space-between; gap: 7px; margin: 22px 0 8px; }
+.otp-input { width: 42px; height: 44px; border: 1px solid #bac7ce; border-radius: 4px; text-align: center; font-size: 17px; }
+.alternate-method { display: block; margin: 16px auto 0; border: 0; background: transparent; color: var(--navy); font-size: 13px; font-weight: 600; }
+
+.security-note { margin: 22px 0 0; padding-top: 14px; display: flex; gap: 8px; border-top: 1px solid #e5eaed; color: #687b86; font-size: 11.5px; line-height: 1.55; }
+.security-note svg { flex: none; width: 17px; height: 17px; margin-top: 1px; color: var(--navy); }
+footer { padding: 14px clamp(20px, 5vw, 72px) 22px; display: flex; justify-content: space-between; gap: 16px; color: #71838d; font-size: 12px; }
+footer span:last-child { display: flex; gap: 8px; }
+footer i { color: #a5b0b6; font-style: normal; }
+
+@media (max-width: 520px) {
+  .site-header { min-height: 74px; padding: 12px 18px; }
+  .identity__mark { width: 36px; height: 36px; font-size: 12px; }
+  .identity__text strong { font-size: 13px; }
+  .identity__text small { font-size: 11px; }
+  main { padding: 27px 14px 20px; }
+  .auth-card { padding: 25px 20px 18px; }
+  .form-actions { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .otp-fields { gap: 5px; }
+  .otp-input { width: 36px; }
+  footer { padding: 12px 18px 18px; font-size: 11px; }
+}
+
+

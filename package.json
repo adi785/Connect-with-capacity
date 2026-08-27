@@ -1,0 +1,17 @@
+{
+  "name": "sih2026",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "backend": "python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8001",
+    "frontend": "python -m http.server 3000 --directory frontend",
+    "serve": "python scripts/serve.py",
+    "test": "pytest tests",
+    "start": "python -m http.server 3000 --directory frontend"
+  },
+  "keywords": ["capacity-connect", "fastapi", "react", "vite"],
+  "author": "Capacity Connect Team",
+  "license": "ISC",
+  "type": "module"
+}

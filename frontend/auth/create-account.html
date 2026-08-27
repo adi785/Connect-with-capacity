@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create account | Capacity Connect</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/auth-support.css">
+  </head>
+  <body>
+    <div class="national-strip" aria-hidden="true"><span></span><span></span><span></span></div>
+    <header class="site-header">
+      <a class="identity" href="index.html" aria-label="Capacity Connect home"><span class="identity__mark" aria-hidden="true">CC</span><span class="identity__text"><strong>CAPACITY CONNECT</strong><small>Learning &amp; Capacity Portal</small></span></a>
+      <a class="quiet-link" href="index.html">Sign in</a>
+    </header>
+    <main>
+      <section class="auth-card support-card" aria-labelledby="create-heading">
+        <p class="portal-name" id="portal-role-label">TRAINEE REGISTRATION</p>
+        <h1 id="create-heading">Create your account</h1>
+        <p class="intro-copy" id="create-intro">Provide your details to begin your learning and capacity-building journey.</p>
+        
+        <div class="role-tabs" style="grid-template-columns: 1fr 1fr; margin: 18px 0 14px;" role="tablist" aria-label="Select account type">
+          <button class="role-tab is-selected" type="button" data-role="trainee" id="role-btn-trainee">Trainee</button>
+          <button class="role-tab" type="button" data-role="trainer" id="role-btn-trainer">Trainer / Mentor</button>
+        </div>
+        <input type="hidden" id="selected-role" value="trainee">
+
+        <form id="create-account-form" class="support-form" novalidate>
+          <div class="field"><label for="full-name">Full name</label><input id="full-name" autocomplete="name" placeholder="e.g. Ramesh Kumar"><p class="field-error" data-error-for="full-name"></p></div>
+          <div class="field"><label for="account-email">Email address</label><input id="account-email" type="email" autocomplete="email" placeholder="name@domain.gov.in"><p class="field-error" data-error-for="account-email"></p></div>
+          <div class="field"><label for="employee-id">Employee / ID number</label><input id="employee-id" autocomplete="username" placeholder="e.g. EMP-10294"><p class="field-error" data-error-for="employee-id"></p></div>
+          <div class="field"><label for="account-password">Create password</label><input id="account-password" type="password" autocomplete="new-password"><p class="field-error" data-error-for="account-password"></p></div>
+          <div class="field"><label for="account-confirm-password">Confirm password</label><input id="account-confirm-password" type="password" autocomplete="new-password"><p class="field-error" data-error-for="account-confirm-password"></p></div>
+          <button id="create-account-button" class="submit-button" type="submit">Create account</button>
+          <p class="account-note">Already registered? <a href="index.html">Sign in</a></p>
+        </form>
+        <div id="account-created" hidden class="completion-message">
+          <h2 id="created-title">Account created successfully</h2>
+          <p class="intro-copy" id="created-desc">Please verify your email address to activate your account.</p>
+          <a class="submit-button button-link" href="index.html">Return to sign in</a>
+        </div>
+      </section>
+    </main>
+    <footer><span>© 2026 Capacity Connect</span><span><a href="#">Accessibility</a><i aria-hidden="true">|</i><a href="#">Help</a></span></footer>
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/validation.js"></script>
+<script src="js/create-account.js"></script>
+  </body>
+</html>

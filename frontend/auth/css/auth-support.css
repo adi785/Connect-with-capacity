@@ -1,0 +1,10 @@
+.quiet-link { color: var(--navy); font-size: 13px; font-weight: 600; text-decoration: none; }
+.quiet-link:hover { text-decoration: underline; }
+.support-card { padding-top: 32px; }
+.support-card > h1, .support-card > .portal-name { margin-bottom: 0; }
+.support-form { margin-top: 23px; }
+.support-form .field + .field { margin-top: 14px; }
+.support-form .submit-button { margin-top: 22px; }
+.button-link { display: flex; align-items: center; justify-content: center; text-decoration: none; }
+.completion-message .button-link { margin-top: 22px; }
+@media (max-width: 520px) { .quiet-link { font-size: 12px; } }

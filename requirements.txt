@@ -1,0 +1,43 @@
+# CAPACITY CONNECT — backend runtime dependencies.
+#
+# Lower bounds are the exact versions this backend was verified against; the upper
+# bounds keep a surprise major/minor release from breaking a deploy.
+#
+# Deliberately NOT listed, because nothing in app/ imports them:
+#   supabase          Supabase is used as plain managed Postgres (via asyncpg) plus
+#                     Storage over its REST API with httpx. The SDK is not used.
+#   alembic           The schema is raw SQL under migrations/.
+#   celery            No background workers yet.
+#   python-jose       firebase-admin performs all token verification.
+#   pandas, reportlab CSV export uses the stdlib `csv` module.
+#   python-dateutil   stdlib `datetime` is sufficient.
+#   structlog         stdlib `logging`, configured in app/main.py.
+#   uuid              stdlib. The PyPI package of that name is an abandoned Python 2
+#                     backport, and `uuid==v4.3.3` was not even a valid version spec.
+
+# ---- Web framework / ASGI server ----
+fastapi>=0.141.1,<0.142.0
+uvicorn[standard]>=0.52.4,<0.53.0
+# starlette is imported directly in a few places but ships as a fastapi dependency;
+# left unpinned so fastapi resolves a compatible version itself.
+
+# ---- Database: SQLAlchemy 2.0 async + asyncpg ----
+sqlalchemy[asyncio]>=2.0.52,<2.1.0
+asyncpg>=0.31.0,<0.32.0
+
+# ---- Validation / configuration ----
+pydantic[email]>=2.13.4,<3.0.0
+pydantic-settings>=2.15.0,<3.0.0
+python-dotenv>=1.2.3,<2.0.0        # pydantic-settings needs this to read .env
+email-validator>=2.0.0
+
+# ---- Authentication: Supabase Auth JWT verification ----
+pyjwt[crypto]>=2.9.0,<3.0.0
+cryptography>=43.0.0
+
+# ---- Rate limiting ----
+# Imported optionally in app/core/rate_limit.py; the app degrades to a no-op if absent.
+slowapi>=0.1.10,<0.2.0
+
+# ---- Outbound HTTP (Supabase Storage signed upload/download URLs) ----
+httpx>=0.28.1,<0.29.0

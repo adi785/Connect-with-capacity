@@ -1,0 +1,44 @@
+# Keep the build context small and secrets out of the image.
+
+# Secrets — never bake these in. Mount .env at runtime instead.
+.env
+.env.*
+!.env.example
+*.pem
+*-service-account*.json
+firebase-*.json
+
+# Python bytecode / caches
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# VCS and tooling
+.git/
+.gitignore
+.claude/
+.vscode/
+.idea/
+
+# Not part of the backend image
+frontend/
+node_modules/
+package.json
+package-lock.json
+*.pdf
+*.md
+!README.md
+requirements-dev.txt
+
+# Local artefacts
+*.log
+*.sqlite3
+.DS_Store
+Thumbs.db

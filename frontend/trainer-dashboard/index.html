@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Trainer Dashboard · Capacity Connect</title>
+    <link rel="stylesheet" href="../homepage/css/style.css" />
+    <link rel="stylesheet" href="../shared/dashboard.css" />
+  </head>
+  <body>
+    <div class="national-strip" aria-hidden="true">
+      <span></span><span></span><span></span>
+    </div>
+
+    <div class="gate" id="gate">
+      <div class="gate__inner" role="status">
+        <div class="spinner" aria-hidden="true"></div>
+        <p class="gate__title">Loading your dashboard…</p>
+        <p class="gate__text">Verifying your session.</p>
+      </div>
+    </div>
+
+    <div class="dash-shell" id="shell" hidden>
+      <a class="skip-link" href="#main">Skip to main content</a>
+
+      <header class="dash-topbar">
+        <div class="shell dash-topbar__inner">
+          <div class="dash-topbar__brand">
+            <a
+              class="identity"
+              href="../homepage/index.html"
+              aria-label="Capacity Connect home"
+            >
+              <span class="identity__mark" aria-hidden="true">CC</span>
+              <span class="identity__text">
+                <strong>CAPACITY CONNECT</strong>
+                <small>Learning &amp; Capacity Portal</small>
+              </span>
+            </a>
+            <span class="role-badge role-badge--trainer" id="role-badge">Trainer</span>
+          </div>
+
+          <span class="dash-topbar__spacer"></span>
+
+          <div class="dash-topbar__actions">
+            <div class="user-chip">
+              <span class="user-chip__avatar" id="user-avatar" aria-hidden="true"
+                >CC</span
+              >
+              <span class="user-chip__meta">
+                <span class="user-chip__name" id="user-name">Loading…</span>
+                <span class="user-chip__sub" id="user-sub"></span>
+              </span>
+            </div>
+
+            <button class="btn btn--outline btn--sm" type="button" data-logout>
+              Log out
+            </button>
+
+            <button
+              class="dash-toggle"
+              type="button"
+              data-nav-toggle
+              aria-expanded="true"
+              aria-controls="dash-nav"
+            >
+              <span class="sr-only">Toggle dashboard menu</span>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <path d="M4 7h16" />
+                <path d="M4 12h16" />
+                <path d="M4 17h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div class="shell dash-body">
+        <nav class="dash-nav" id="dash-nav" aria-label="Dashboard sections">
+          <span class="dash-nav__label">Trainer</span>
+          <ul class="dash-nav__list">
+            <li>
+              <a class="dash-nav__link is-active" href="#overview" aria-current="page">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  aria-hidden="true"
+                >
+                  <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
+                  <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
+                  <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
+                  <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
+                </svg>
+                Overview
+              </a>
+            </li>
+            <li>
+              <a class="dash-nav__link" href="#my-courses">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  aria-hidden="true"
+                >
+                  <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5Z" />
+                  <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5A1.5 1.5 0 0 0 20 18.5Z" />
+                </svg>
+                My Courses
+              </a>
+            </li>
+            <li>
+              <a class="dash-nav__link" href="#my-trainees">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  aria-hidden="true"
+                >
+                  <circle cx="9" cy="8.5" r="3.25" />
+                  <path d="M3.5 19.5c0-3.1 2.5-5.2 5.5-5.2s5.5 2.1 5.5 5.2" />
+                  <path d="M16 6.2a3.2 3.2 0 0 1 0 6" />
+                  <path d="M17.5 14.6c1.9.6 3 2.3 3 4.9" />
+                </svg>
+                My Trainees
+              </a>
+            </li>
+            <li>
+              <a class="dash-nav__link" href="#profile">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="8" r="3.75" />
+                  <path d="M4.5 20c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6" />
+                </svg>
+                My Profile
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <main class="dash-main" id="main">
+          <section class="welcome" id="overview" aria-labelledby="welcome-title">
+            <span class="welcome__eyebrow">Trainer workspace</span>
+            <h1 class="welcome__title" id="welcome-title">
+              Welcome back, <span id="welcome-name">there</span>.
+            </h1>
+            <p class="welcome__text">
+              Review the courses you deliver, keep an eye on trainee progress and
+              see which programmes are still running.
+            </p>
+            <div class="welcome__actions">
+              <a class="btn btn--orange btn--sm" href="#my-courses">View my courses</a>
+              <a class="btn btn--ghost-light btn--sm" href="#my-trainees">
+                View my trainees
+              </a>
+            </div>
+          </section>
+
+          <div id="data-notice" hidden></div>
+
+          <section aria-labelledby="stats-title">
+            <h2 class="sr-only" id="stats-title">Your delivery at a glance</h2>
+            <div class="stat-grid">
+              <article class="stat-card">
+                <span class="icon-tile" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                  >
+                    <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5Z" />
+                    <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5A1.5 1.5 0 0 0 20 18.5Z" />
+                  </svg>
+                </span>
+                <span class="stat-card__body">
+                  <span class="stat-card__value is-pending" id="stat-courses">—</span>
+                  <span class="stat-card__label">Total courses</span>
+                </span>
+              </article>
+
+              <article class="stat-card">
+                <span class="icon-tile" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                  >
+                    <circle cx="9" cy="8.5" r="3.25" />
+                    <path d="M3.5 19.5c0-3.1 2.5-5.2 5.5-5.2s5.5 2.1 5.5 5.2" />
+                    <path d="M16 6.2a3.2 3.2 0 0 1 0 6" />
+                    <path d="M17.5 14.6c1.9.6 3 2.3 3 4.9" />
+                  </svg>
+                </span>
+                <span class="stat-card__body">
+                  <span class="stat-card__value is-pending" id="stat-trainees">—</span>
+                  <span class="stat-card__label">Total trainees</span>
+                </span>
+              </article>
+
+              <article class="stat-card">
+                <span class="icon-tile icon-tile--orange" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                  >
+                    <circle cx="12" cy="12" r="8.5" />
+                    <path d="M12 7.5V12l3 1.9" />
+                  </svg>
+                </span>
+                <span class="stat-card__body">
+                  <span class="stat-card__value is-pending" id="stat-active">—</span>
+                  <span class="stat-card__label">Active courses</span>
+                </span>
+              </article>
+
+              <article class="stat-card">
+                <span class="icon-tile icon-tile--orange" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                  >
+                    <circle cx="12" cy="12" r="8.5" />
+                    <path d="m8.5 12.3 2.3 2.4 4.7-5.1" />
+                  </svg>
+                </span>
+                <span class="stat-card__body">
+                  <span class="stat-card__value is-pending" id="stat-completed">—</span>
+                  <span class="stat-card__label">Completed trainees</span>
+                </span>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel" id="my-courses" aria-labelledby="courses-title">
+            <div class="panel__head">
+              <div class="panel__titles">
+                <h2 class="panel__title" id="courses-title">My courses</h2>
+                <p class="panel__sub">Programmes assigned to you as trainer.</p>
+              </div>
+            </div>
+            <div class="panel__body panel__body--flush" id="courses-body"></div>
+          </section>
+
+          <section class="panel" id="my-trainees" aria-labelledby="trainees-title">
+            <div class="panel__head">
+              <div class="panel__titles">
+                <h2 class="panel__title" id="trainees-title">My trainees</h2>
+                <p class="panel__sub">
+                  Learners enrolled in the courses you deliver.
+                </p>
+              </div>
+            </div>
+            <div class="panel__body panel__body--flush" id="trainees-body"></div>
+          </section>
+
+          <section class="panel" id="profile" aria-labelledby="profile-title">
+            <div class="panel__head">
+              <div class="panel__titles">
+                <h2 class="panel__title" id="profile-title">My profile</h2>
+                <p class="panel__sub">
+                  Details held on your account record. Contact your administrator
+                  to request a change.
+                </p>
+              </div>
+            </div>
+            <div class="panel__body" id="profile-body"></div>
+          </section>
+        </main>
+      </div>
+
+      <footer class="dash-footer">
+        <div class="shell dash-footer__inner">
+          <span>© 2026 Capacity Connect</span>
+          <span>
+            <a href="../homepage/index.html">Home</a>
+            &nbsp;·&nbsp;
+            <a href="../homepage/index.html#help">Help Centre</a>
+          </span>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../auth/js/supabase.js"></script>
+    <script src="../auth/js/auth.js"></script>
+    <script src="../shared/dashboard-guard.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

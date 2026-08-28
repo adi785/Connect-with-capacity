@@ -64,7 +64,7 @@
     return body;
   }
 
-  window.CapacityConnectAPI = Object.freeze({
+  var apiClient = Object.freeze({
     baseUrl: baseUrl,
     url: buildUrl,
     request: request,
@@ -93,4 +93,7 @@
       return request(path, Object.assign({}, options || {}, { method: "DELETE" }));
     }
   });
+
+  window.CapacityConnectAPI = apiClient;
+  window.API = apiClient;
 })(window);

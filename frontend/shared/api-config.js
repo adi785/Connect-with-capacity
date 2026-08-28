@@ -7,11 +7,14 @@
 (function (window) {
   "use strict";
 
-  var API_BASE_URL = "http://127.0.0.1:8000/api/v1";
+  var host = window.location.hostname || "127.0.0.1";
+  var port = "8000";
+  var apiOrigin = window.location.protocol + "//" + (host === "localhost" ? "localhost" : "127.0.0.1") + ":" + port;
+  var API_BASE_URL = apiOrigin + "/api/v1";
 
   window.CapacityConnectConfig = Object.freeze({
     API_BASE_URL: API_BASE_URL,
-    API_ORIGIN: "http://127.0.0.1:8000"
+    API_ORIGIN: apiOrigin
   });
 
   // Backward-compatible global used by existing dashboard code.

@@ -22,9 +22,8 @@ class Settings(BaseSettings):
 
     # ---------- App ----------
     env: str = Field(default="development", alias="ENV")
-    secret_key: str = Field(default="dev-insecure-change-me", alias="SECRET_KEY")
-    cors_origins: str = Field(default="http://localhost:3000", alias="CORS_ORIGINS")
-    cors_origin_regex: str = Field(default="", alias="CORS_ORIGIN_REGEX")
+    cors_origins: str = Field(default="http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500,http://localhost:5173", alias="CORS_ORIGINS")
+    cors_origin_regex: str = Field(default=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$", alias="CORS_ORIGIN_REGEX")
     api_prefix: str = "/api/v1"
 
     # ---------- Database (direct Postgres connection for SQLAlchemy) ----------

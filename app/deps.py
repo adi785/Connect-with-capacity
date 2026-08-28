@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -117,14 +117,25 @@ async def get_or_create_profile(db: AsyncSession, token: VerifiedToken) -> Profi
     until an admin approves them (FR-1.7). Emails in BOOTSTRAP_ADMIN_EMAILS are
     promoted straight to approved admin, otherwise nobody could approve the first user.
     """
-    profile = await db.scalar(select(Profile).where(Profile.firebase_uid == token.uid))
     email = (token.email or f"{token.uid}@unknown.local").lower().strip()
     is_bootstrap_admin = email in settings.admin_emails
 
     initial_role = "admin" if is_bootstrap_admin else token.raw_claims.get("role", "trainee")
     initial_status = "approved" if (is_bootstrap_admin or token.raw_claims.get("status") == "approved") else "pending"
 
+    profile = await db.scalar(
+        select(Profile).where(
+            or_(
+                Profile.firebase_uid == token.uid,
+                Profile.email == email,
+            )
+        )
+    )
+
     if profile is not None:
+        if profile.firebase_uid != token.uid:
+            profile.firebase_uid = token.uid
+            await db.flush()
         if settings.resolved_auth_mode == "dev" and token.raw_claims.get("role"):
             profile.role = token.raw_claims["role"]
             profile.status = token.raw_claims.get("status", "approved")
@@ -144,13 +155,23 @@ async def get_or_create_profile(db: AsyncSession, token: VerifiedToken) -> Profi
     except IntegrityError:
         # Two first-requests raced, or the email already belongs to another uid.
         await db.rollback()
-        existing = await db.scalar(select(Profile).where(Profile.firebase_uid == token.uid))
-        if existing is None:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="This email is already registered to a different account",
-            ) from None
-        return existing
+        existing = await db.scalar(
+            select(Profile).where(
+                or_(
+                    Profile.firebase_uid == token.uid,
+                    Profile.email == email,
+                )
+            )
+        )
+        if existing is not None:
+            if existing.firebase_uid != token.uid:
+                existing.firebase_uid = token.uid
+                await db.flush()
+            return existing
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This email is already registered to a different account",
+        ) from None
 
     return profile
 
@@ -249,25 +270,34 @@ require_trainer_or_admin = require_role("trainer", "admin")
 
 async def require_trainee_profile(
     current_user: CurrentUser = Depends(require_trainee),
+    db: AsyncSession = Depends(get_db),
 ) -> CurrentUser:
     """A trainee action that needs the trainee side-table row to exist."""
     if current_user.trainee_profile_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Trainee profile is missing for this account",
-        )
+        row = await db.scalar(select(TraineeProfile).where(TraineeProfile.user_id == current_user.id))
+        if row is None:
+            row = TraineeProfile(user_id=current_user.id)
+            db.add(row)
+            await db.flush()
+        current_user.trainee_profile_id = row.id
     return current_user
 
 
 async def require_trainer_profile(
     current_user: CurrentUser = Depends(require_trainer),
+    db: AsyncSession = Depends(get_db),
 ) -> CurrentUser:
     """A trainer action that needs the trainer side-table row to exist."""
     if current_user.trainer_profile_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Trainer profile is missing for this account",
-        )
+        row = await db.scalar(select(TrainerProfile).where(TrainerProfile.user_id == current_user.id))
+        if row is None:
+            row = TrainerProfile(
+                user_id=current_user.id,
+                designation="Trainer" if current_user.role == "trainer" else "Administrator",
+            )
+            db.add(row)
+            await db.flush()
+        current_user.trainer_profile_id = row.id
     return current_user
 
 

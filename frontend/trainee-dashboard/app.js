@@ -10,6 +10,8 @@
 (function (window, document) {
   "use strict";
 
+  var API = window.CapacityConnectAPI || window.API;
+
   var state = {
     user: null,
     profile: null,

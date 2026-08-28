@@ -126,8 +126,7 @@ async def list_courses(
     limit: int = 20,
     offset: int = 0,
 ) -> tuple[list[dict[str, Any]], int]:
-    """Paginated course catalog with per-course counts and the caller's enrollment."""
-    query = _visibility_filter(select(Course), current_user)
+    """Paginated course catalog with per-course counts and caller's enrollment in a single query."""
     count_q = _visibility_filter(select(func.count(Course.id)), current_user)
 
     filters = []
@@ -142,107 +141,200 @@ async def list_courses(
         filters.append(Course.created_by == current_user.trainer_profile_id)
 
     for f in filters:
-        query = query.where(f)
         count_q = count_q.where(f)
 
     total = (await db.scalar(count_q)) or 0
-    rows = await db.scalars(
-        query.order_by(Course.created_at.desc()).limit(limit).offset(offset)
-    )
-    courses = list(rows.all())
-    if not courses:
-        return [], total
+    if not total:
+        return [], 0
 
-    return await _decorate_courses(db, current_user, courses), total
+    modules_sub = (
+        select(CourseModule.course_id, func.count(CourseModule.id).label("module_count"))
+        .group_by(CourseModule.course_id)
+        .subquery()
+    )
+    enrollments_sub = (
+        select(Enrollment.course_id, func.count(Enrollment.id).label("enrollment_count"))
+        .group_by(Enrollment.course_id)
+        .subquery()
+    )
+    ratings_sub = (
+        select(Feedback.course_id, func.avg(Feedback.rating).label("average_rating"))
+        .group_by(Feedback.course_id)
+        .subquery()
+    )
+
+    query = (
+        select(
+            Course.id,
+            Course.title,
+            Course.description,
+            Course.subject_id,
+            Course.created_by,
+            Course.status,
+            Course.created_at,
+            Course.updated_at,
+            Subject.name.label("subject_name"),
+            Profile.name.label("trainer_name"),
+            func.coalesce(modules_sub.c.module_count, 0).label("module_count"),
+            func.coalesce(enrollments_sub.c.enrollment_count, 0).label("enrollment_count"),
+            ratings_sub.c.average_rating.label("average_rating"),
+        )
+        .outerjoin(Subject, Subject.id == Course.subject_id)
+        .outerjoin(TrainerProfile, TrainerProfile.id == Course.created_by)
+        .outerjoin(Profile, Profile.id == TrainerProfile.user_id)
+        .outerjoin(modules_sub, modules_sub.c.course_id == Course.id)
+        .outerjoin(enrollments_sub, enrollments_sub.c.course_id == Course.id)
+        .outerjoin(ratings_sub, ratings_sub.c.course_id == Course.id)
+    )
+
+    if current_user.trainee_profile_id:
+        own_sub = (
+            select(
+                Enrollment.course_id,
+                Enrollment.status.label("own_status"),
+                Enrollment.progress_percent.label("own_progress"),
+            )
+            .where(Enrollment.trainee_profile_id == current_user.trainee_profile_id)
+            .subquery()
+        )
+        query = query.add_columns(
+            own_sub.c.own_status,
+            own_sub.c.own_progress,
+        ).outerjoin(own_sub, own_sub.c.course_id == Course.id)
+
+    query = _visibility_filter(query, current_user)
+    for f in filters:
+        query = query.where(f)
+
+    rows = (
+        await db.execute(
+            query.order_by(Course.created_at.desc()).limit(limit).offset(offset)
+        )
+    ).mappings().all()
+
+    items = []
+    for r in rows:
+        avg_r = r["average_rating"]
+        items.append(
+            {
+                "id": r["id"],
+                "title": r["title"],
+                "description": r["description"],
+                "subject_id": r["subject_id"],
+                "subject_name": r["subject_name"],
+                "created_by": r["created_by"],
+                "trainer_name": r["trainer_name"],
+                "status": r["status"],
+                "created_at": r["created_at"],
+                "updated_at": r["updated_at"],
+                "module_count": int(r["module_count"] or 0),
+                "enrollment_count": int(r["enrollment_count"] or 0),
+                "average_rating": round(float(avg_r), 2) if avg_r is not None else None,
+                "enrollment_status": r.get("own_status"),
+                "progress_percent": r.get("own_progress"),
+            }
+        )
+
+    return items, total
 
 
 async def _decorate_courses(
     db: AsyncSession, current_user: CurrentUser, courses: list[Course]
 ) -> list[dict[str, Any]]:
-    """Attach subject/trainer names, counts, ratings, and own-enrollment in bulk.
+    """Attach subject/trainer names, counts, ratings, and own-enrollment in a single query."""
+    if not courses:
+        return []
 
-    Done with grouped queries rather than per-course lookups to keep the catalog at
-    a fixed number of round-trips regardless of page size.
-    """
     course_ids = [c.id for c in courses]
 
-    subject_ids = {c.subject_id for c in courses if c.subject_id}
-    subject_names: dict[uuid.UUID, str] = {}
-    if subject_ids:
-        rows = await db.execute(
-            select(Subject.id, Subject.name).where(Subject.id.in_(subject_ids))
+    modules_sub = (
+        select(CourseModule.course_id, func.count(CourseModule.id).label("module_count"))
+        .where(CourseModule.course_id.in_(course_ids))
+        .group_by(CourseModule.course_id)
+        .subquery()
+    )
+    enrollments_sub = (
+        select(Enrollment.course_id, func.count(Enrollment.id).label("enrollment_count"))
+        .where(Enrollment.course_id.in_(course_ids))
+        .group_by(Enrollment.course_id)
+        .subquery()
+    )
+    ratings_sub = (
+        select(Feedback.course_id, func.avg(Feedback.rating).label("average_rating"))
+        .where(Feedback.course_id.in_(course_ids))
+        .group_by(Feedback.course_id)
+        .subquery()
+    )
+
+    query = (
+        select(
+            Course.id,
+            Course.title,
+            Course.description,
+            Course.subject_id,
+            Course.created_by,
+            Course.status,
+            Course.created_at,
+            Course.updated_at,
+            Subject.name.label("subject_name"),
+            Profile.name.label("trainer_name"),
+            func.coalesce(modules_sub.c.module_count, 0).label("module_count"),
+            func.coalesce(enrollments_sub.c.enrollment_count, 0).label("enrollment_count"),
+            ratings_sub.c.average_rating.label("average_rating"),
         )
-        subject_names = dict(rows.all())
-
-    trainer_ids = {c.created_by for c in courses}
-    trainer_names: dict[uuid.UUID, str] = {}
-    if trainer_ids:
-        rows = await db.execute(
-            select(TrainerProfile.id, Profile.name)
-            .join(Profile, Profile.id == TrainerProfile.user_id)
-            .where(TrainerProfile.id.in_(trainer_ids))
-        )
-        trainer_names = dict(rows.all())
-
-    module_counts = dict(
-        (
-            await db.execute(
-                select(CourseModule.course_id, func.count(CourseModule.id))
-                .where(CourseModule.course_id.in_(course_ids))
-                .group_by(CourseModule.course_id)
-            )
-        ).all()
-    )
-    enrollment_counts = dict(
-        (
-            await db.execute(
-                select(Enrollment.course_id, func.count(Enrollment.id))
-                .where(Enrollment.course_id.in_(course_ids))
-                .group_by(Enrollment.course_id)
-            )
-        ).all()
-    )
-    ratings = dict(
-        (
-            await db.execute(
-                select(Feedback.course_id, func.avg(Feedback.rating))
-                .where(Feedback.course_id.in_(course_ids))
-                .group_by(Feedback.course_id)
-            )
-        ).all()
+        .outerjoin(Subject, Subject.id == Course.subject_id)
+        .outerjoin(TrainerProfile, TrainerProfile.id == Course.created_by)
+        .outerjoin(Profile, Profile.id == TrainerProfile.user_id)
+        .outerjoin(modules_sub, modules_sub.c.course_id == Course.id)
+        .outerjoin(enrollments_sub, enrollments_sub.c.course_id == Course.id)
+        .outerjoin(ratings_sub, ratings_sub.c.course_id == Course.id)
+        .where(Course.id.in_(course_ids))
     )
 
-    own_enrollments: dict[uuid.UUID, tuple[str, int]] = {}
     if current_user.trainee_profile_id:
-        rows = await db.execute(
-            select(Enrollment.course_id, Enrollment.status, Enrollment.progress_percent).where(
+        own_sub = (
+            select(
+                Enrollment.course_id,
+                Enrollment.status.label("own_status"),
+                Enrollment.progress_percent.label("own_progress"),
+            )
+            .where(
                 Enrollment.trainee_profile_id == current_user.trainee_profile_id,
                 Enrollment.course_id.in_(course_ids),
             )
+            .subquery()
         )
-        own_enrollments = {cid: (st, prog or 0) for cid, st, prog in rows.all()}
+        query = query.add_columns(
+            own_sub.c.own_status,
+            own_sub.c.own_progress,
+        ).outerjoin(own_sub, own_sub.c.course_id == Course.id)
+
+    rows = (await db.execute(query)).mappings().all()
+    rows_by_id = {r["id"]: r for r in rows}
 
     result = []
-    for course in courses:
-        enrollment = own_enrollments.get(course.id)
-        rating = ratings.get(course.id)
+    for c in courses:
+        r = rows_by_id.get(c.id)
+        if not r:
+            continue
+        avg_r = r["average_rating"]
         result.append(
             {
-                "id": course.id,
-                "title": course.title,
-                "description": course.description,
-                "subject_id": course.subject_id,
-                "subject_name": subject_names.get(course.subject_id) if course.subject_id else None,
-                "created_by": course.created_by,
-                "trainer_name": trainer_names.get(course.created_by),
-                "status": course.status,
-                "created_at": course.created_at,
-                "updated_at": course.updated_at,
-                "module_count": module_counts.get(course.id, 0),
-                "enrollment_count": enrollment_counts.get(course.id, 0),
-                "average_rating": round(float(rating), 2) if rating is not None else None,
-                "enrollment_status": enrollment[0] if enrollment else None,
-                "progress_percent": enrollment[1] if enrollment else None,
+                "id": r["id"],
+                "title": r["title"],
+                "description": r["description"],
+                "subject_id": r["subject_id"],
+                "subject_name": r["subject_name"],
+                "created_by": r["created_by"],
+                "trainer_name": r["trainer_name"],
+                "status": r["status"],
+                "created_at": r["created_at"],
+                "updated_at": r["updated_at"],
+                "module_count": int(r["module_count"] or 0),
+                "enrollment_count": int(r["enrollment_count"] or 0),
+                "average_rating": round(float(avg_r), 2) if avg_r is not None else None,
+                "enrollment_status": r.get("own_status"),
+                "progress_percent": r.get("own_progress"),
             }
         )
     return result

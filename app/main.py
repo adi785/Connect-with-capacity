@@ -104,21 +104,19 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 def create_app() -> FastAPI:
     """Application factory."""
-    is_prod = settings.is_production
-
     app = FastAPI(
         title="CAPACITY CONNECT",
         description=(
             "Corporate Training & Learning Management Platform.\n\n"
-            "Authentication is a Firebase ID token in `Authorization: Bearer <token>`. "
-            "Signup, login, password reset, email verification, and MFA are all handled "
-            "client-side by Firebase; this API only verifies tokens and owns the "
-            "application-side profile."
+            "Authentication is a Supabase JWT token in `Authorization: Bearer <token>`. "
+            "Signup, login, password reset, and session management are handled "
+            "client-side with Supabase Auth; this API verifies tokens and manages "
+            "application-side profiles and data."
         ),
         version="1.0.0",
-        docs_url=None if is_prod else "/docs",
-        redoc_url=None if is_prod else "/redoc",
-        openapi_url=None if is_prod else "/openapi.json",
+        docs_url="/docs",
+        redoc_url="/redoc",
+        openapi_url="/openapi.json",
         lifespan=lifespan,
     )
 
@@ -142,7 +140,7 @@ def create_app() -> FastAPI:
 
 
 def _register_meta_routes(app: FastAPI) -> None:
-    """Unauthenticated liveness/readiness routes, outside the versioned prefix."""
+    """Unauthenticated liveness/readiness routes, outside and inside the versioned prefix."""
 
     @app.get("/", include_in_schema=False)
     async def root() -> dict:
@@ -150,14 +148,16 @@ def _register_meta_routes(app: FastAPI) -> None:
             "name": "CAPACITY CONNECT API",
             "version": "1.0.0",
             "api_prefix": settings.api_prefix,
-            "docs": None if settings.is_production else "/docs",
+            "docs": "/docs",
         }
 
     @app.get("/health", tags=["meta"], summary="Liveness probe")
+    @app.get("/api/v1/health", tags=["meta"], summary="Liveness probe (API prefix)")
     async def health() -> dict:
         return {"status": "ok", "env": settings.env}
 
     @app.get("/health/ready", tags=["meta"], summary="Readiness probe (checks Postgres)")
+    @app.get("/api/v1/health/ready", tags=["meta"], summary="Readiness probe (API prefix)")
     async def ready() -> dict:
         """Returns 503 when the database is unreachable, so orchestrators hold traffic."""
         from fastapi import HTTPException, status as http_status

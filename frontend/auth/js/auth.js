@@ -26,7 +26,7 @@ const Auth = {
    * keep this as it is.
    */
   RESET_PASSWORD_PAGE:
-    `${window.location.origin}/reset-password.html`,
+    `${window.location.origin}/auth/reset-password.html`,
 
   ROLES: ["trainee", "trainer", "admin"],
 

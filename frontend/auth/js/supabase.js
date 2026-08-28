@@ -5,7 +5,7 @@ const SUPABASE_ANON_KEY =
 
 const API_BASE =
     (window.CapacityConnectConfig && window.CapacityConnectConfig.API_BASE_URL) ||
-    "https://capacity-connect-three.vercel.app/api/v1";
+    (window.location.origin.replace(/\/+$/, "") + "/api/v1");
 window.API_BASE = API_BASE;
 window.CAPACITY_CONNECT_API_URL = API_BASE;
 

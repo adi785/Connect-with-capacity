@@ -14,6 +14,21 @@
 ALTER TABLE public.profiles 
     ADD COLUMN IF NOT EXISTS employee_id VARCHAR(50);
 
+-- Deduplicate any existing duplicate employee_ids before applying unique index
+DO $$
+BEGIN
+    WITH duplicates AS (
+        SELECT id, employee_id,
+               ROW_NUMBER() OVER (PARTITION BY employee_id ORDER BY created_at ASC NULLS LAST, id ASC) as rn
+        FROM public.profiles
+        WHERE employee_id IS NOT NULL AND employee_id <> ''
+    )
+    UPDATE public.profiles p
+    SET employee_id = p.employee_id || '-' || SUBSTRING(p.id::text, 1, 4)
+    FROM duplicates d
+    WHERE p.id = d.id AND d.rn > 1;
+END $$;
+
 CREATE UNIQUE INDEX IF NOT EXISTS profiles_employee_id_idx 
     ON public.profiles(employee_id) 
     WHERE employee_id IS NOT NULL;
@@ -84,35 +99,65 @@ $$;
 GRANT EXECUTE ON FUNCTION public.get_email_by_employee_id(TEXT) TO anon, authenticated;
 
 
+-- Helper: Guard profile privileges (prevents non-admins from changing their role/status)
+CREATE OR REPLACE FUNCTION public.guard_profile_privileges()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Allow system migrations, triggers, background jobs, postgres superuser, service_role, or admins
+  IF auth.uid() IS NULL 
+     OR current_user IN ('postgres', 'supabase_admin', 'service_role')
+     OR public.current_user_role() = 'admin' THEN
+    RETURN NEW;
+  END IF;
+
+  -- Authenticated non-admin users cannot change their own role or status
+  IF NEW.role IS DISTINCT FROM OLD.role THEN
+    RAISE EXCEPTION 'Only an administrator can change an account role.'
+      USING errcode = '42501';
+  END IF;
+
+  IF NEW.status IS DISTINCT FROM OLD.status THEN
+    RAISE EXCEPTION 'Only an administrator can change an account status.'
+      USING errcode = '42501';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS profiles_guard_privileges ON public.profiles;
+CREATE TRIGGER profiles_guard_privileges
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION public.guard_profile_privileges();
+
+
+
 -- --------------------------------------------------------------------------
--- 3. Enable RLS on ALL Public Tables
+-- 3. Enable RLS on ALL Public Tables (Safely checks table existence)
 -- --------------------------------------------------------------------------
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.trainee_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.trainer_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.approval_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.qualifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.work_experience ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.skills ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.interests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.subjects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.courses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.course_modules ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.learning_resources ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.enrollments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.assessments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.questions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.question_options ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.assessment_attempts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.attempt_answers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.feedback ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.competency_map ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.trainer_applications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.certificates ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.certificates_issued ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.notification_reads ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+DO $$
+DECLARE
+    tbl TEXT;
+    tbls TEXT[] := ARRAY[
+        'profiles', 'trainee_profiles', 'trainer_profiles', 'approval_requests',
+        'qualifications', 'work_experience', 'skills', 'interests', 'subjects',
+        'courses', 'course_modules', 'learning_resources', 'enrollments',
+        'assessments', 'questions', 'question_options', 'assessment_attempts',
+        'attempt_answers', 'feedback', 'competency_map', 'certificates',
+        'certificates_issued', 'notifications', 'notification_reads', 'audit_logs'
+    ];
+BEGIN
+    FOREACH tbl IN ARRAY tbls LOOP
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = tbl) THEN
+            EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY;', tbl);
+        END IF;
+    END LOOP;
+END $$;
 
 
 -- --------------------------------------------------------------------------
@@ -696,3 +741,198 @@ DROP POLICY IF EXISTS "Read certificate templates" ON public.certificates;
 CREATE POLICY "Read certificate templates"
 ON public.certificates FOR SELECT TO authenticated
 USING (true);
+
+
+-- --------------------------------------------------------------------------
+-- 12. Supabase Auth Automatic Profile Synchronization Trigger & Backfill
+-- --------------------------------------------------------------------------
+
+-- Ensure firebase_uid nullable for pure Supabase Auth users
+ALTER TABLE public.profiles ALTER COLUMN firebase_uid DROP NOT NULL;
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_name TEXT;
+  v_role TEXT;
+  v_emp_id TEXT;
+  v_status TEXT;
+BEGIN
+  v_name := COALESCE(
+    NEW.raw_user_meta_data->>'full_name',
+    NEW.raw_user_meta_data->>'name',
+    split_part(NEW.email, '@', 1)
+  );
+  v_role := COALESCE(NEW.raw_user_meta_data->>'role', 'trainee');
+  v_emp_id := COALESCE(
+    NEW.raw_user_meta_data->>'employee_id',
+    'EMP-' || substr(NEW.id::text, 1, 6)
+  );
+
+  -- Determine initial status
+  IF v_role = 'trainer' THEN
+    v_status := 'pending';
+  ELSE
+    v_status := 'approved';
+  END IF;
+
+  -- Resolve potential duplicate employee_id
+  IF EXISTS (SELECT 1 FROM public.profiles WHERE employee_id = v_emp_id AND id <> NEW.id) THEN
+    v_emp_id := v_emp_id || '-' || substr(NEW.id::text, 1, 4);
+  END IF;
+
+  -- Clean up legacy unlinked rows with same email if present
+  IF EXISTS (SELECT 1 FROM public.profiles WHERE email = NEW.email AND id <> NEW.id) THEN
+    DELETE FROM public.trainee_profiles WHERE user_id IN (SELECT id FROM public.profiles WHERE email = NEW.email AND id <> NEW.id);
+    DELETE FROM public.trainer_profiles WHERE user_id IN (SELECT id FROM public.profiles WHERE email = NEW.email AND id <> NEW.id);
+    DELETE FROM public.approval_requests WHERE user_id IN (SELECT id FROM public.profiles WHERE email = NEW.email AND id <> NEW.id);
+    DELETE FROM public.profiles WHERE email = NEW.email AND id <> NEW.id;
+  END IF;
+
+  -- Upsert profile record matching auth.users.id
+  INSERT INTO public.profiles (
+    id,
+    firebase_uid,
+    name,
+    email,
+    employee_id,
+    role,
+    status,
+    created_at,
+    updated_at
+  )
+  VALUES (
+    NEW.id,
+    NEW.id::text,
+    v_name,
+    NEW.email,
+    v_emp_id,
+    v_role,
+    v_status,
+    now(),
+    now()
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    email = EXCLUDED.email,
+    employee_id = COALESCE(EXCLUDED.employee_id, public.profiles.employee_id),
+    role = COALESCE(public.profiles.role, EXCLUDED.role),
+    status = CASE 
+      WHEN public.profiles.status = 'approved' THEN 'approved' 
+      ELSE COALESCE(public.profiles.status, EXCLUDED.status) 
+    END,
+    updated_at = now();
+
+  -- Role-specific extensions
+  IF v_role = 'trainee' THEN
+    INSERT INTO public.trainee_profiles (user_id, headline)
+    VALUES (NEW.id, 'Trainee')
+    ON CONFLICT (user_id) DO NOTHING;
+  ELSIF v_role = 'trainer' THEN
+    INSERT INTO public.trainer_profiles (user_id, designation)
+    VALUES (NEW.id, 'Trainer')
+    ON CONFLICT (user_id) DO NOTHING;
+
+    -- Create pending approval request for admin review if not approved
+    IF v_status = 'pending' THEN
+      INSERT INTO public.approval_requests (user_id, requested_role, status, requested_at)
+      VALUES (NEW.id, 'trainer', 'pending', now())
+      ON CONFLICT DO NOTHING;
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+-- Attach trigger to auth.users
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT OR UPDATE ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Backfill: Sync any existing users in auth.users missing in public.profiles
+DO $$
+DECLARE
+  u RECORD;
+  v_name TEXT;
+  v_role TEXT;
+  v_emp_id TEXT;
+  v_status TEXT;
+BEGIN
+  FOR u IN SELECT * FROM auth.users LOOP
+    v_name := COALESCE(
+      u.raw_user_meta_data->>'full_name',
+      u.raw_user_meta_data->>'name',
+      split_part(u.email, '@', 1)
+    );
+    v_role := COALESCE(u.raw_user_meta_data->>'role', 'trainee');
+    v_emp_id := COALESCE(
+      u.raw_user_meta_data->>'employee_id',
+      'EMP-' || substr(u.id::text, 1, 6)
+    );
+    v_status := CASE WHEN v_role = 'trainer' THEN 'pending' ELSE 'approved' END;
+
+    -- Fix employee_id conflict
+    IF EXISTS (SELECT 1 FROM public.profiles WHERE employee_id = v_emp_id AND id <> u.id) THEN
+      v_emp_id := v_emp_id || '-' || substr(u.id::text, 1, 4);
+    END IF;
+
+    -- Clean legacy row with same email
+    IF EXISTS (SELECT 1 FROM public.profiles WHERE email = u.email AND id <> u.id) THEN
+      DELETE FROM public.trainee_profiles WHERE user_id IN (SELECT id FROM public.profiles WHERE email = u.email AND id <> u.id);
+      DELETE FROM public.trainer_profiles WHERE user_id IN (SELECT id FROM public.profiles WHERE email = u.email AND id <> u.id);
+      DELETE FROM public.approval_requests WHERE user_id IN (SELECT id FROM public.profiles WHERE email = u.email AND id <> u.id);
+      DELETE FROM public.profiles WHERE email = u.email AND id <> u.id;
+    END IF;
+
+    INSERT INTO public.profiles (
+      id,
+      firebase_uid,
+      name,
+      email,
+      employee_id,
+      role,
+      status,
+      created_at,
+      updated_at
+    )
+    VALUES (
+      u.id,
+      u.id::text,
+      v_name,
+      u.email,
+      v_emp_id,
+      v_role,
+      v_status,
+      now(),
+      now()
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      name = EXCLUDED.name,
+      email = EXCLUDED.email,
+      employee_id = COALESCE(EXCLUDED.employee_id, public.profiles.employee_id),
+      role = COALESCE(public.profiles.role, EXCLUDED.role),
+      status = CASE 
+        WHEN public.profiles.status = 'approved' THEN 'approved' 
+        ELSE COALESCE(public.profiles.status, EXCLUDED.status)
+      END,
+      updated_at = now();
+
+    -- Provision sub-profile
+    IF v_role = 'trainee' THEN
+      INSERT INTO public.trainee_profiles (user_id, headline)
+      VALUES (u.id, 'Trainee')
+      ON CONFLICT (user_id) DO NOTHING;
+    ELSIF v_role = 'trainer' THEN
+      INSERT INTO public.trainer_profiles (user_id, designation)
+      VALUES (u.id, 'Trainer')
+      ON CONFLICT (user_id) DO NOTHING;
+    END IF;
+  END LOOP;
+END $$;
+

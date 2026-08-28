@@ -217,7 +217,7 @@
     var panel = document.getElementById("panel-approvals");
     if (!panel) return;
 
-    Dash.renderLoading(panel, "Loading pending approval applications…");
+    Dash.renderSkeletonTable(panel, 3, 5);
 
     try {
       var data = await API.get("admin/approvals?status=pending");
@@ -244,8 +244,8 @@
   async function loadUsers() {
     var traineePanel = document.getElementById("panel-trainees");
     var trainerPanel = document.getElementById("panel-trainers");
-    if (traineePanel) Dash.renderLoading(traineePanel, "Loading trainee accounts…");
-    if (trainerPanel) Dash.renderLoading(trainerPanel, "Loading trainer accounts…");
+    if (traineePanel) Dash.renderSkeletonTable(traineePanel, 4, 6);
+    if (trainerPanel) Dash.renderSkeletonTable(trainerPanel, 4, 6);
 
     try {
       var data = await API.get("admin/users?limit=200");
@@ -265,7 +265,7 @@
   // 4. Subjects / Taxonomy
   async function loadSubjects() {
     var panel = document.getElementById("panel-taxonomy");
-    if (panel) Dash.renderLoading(panel, "Loading subject taxonomies…");
+    if (panel) Dash.renderSkeletonTable(panel, 3, 4);
 
     try {
       var subs = await API.get("subjects");
@@ -295,7 +295,7 @@
   // 5. Courses
   async function loadCourses() {
     var panel = document.getElementById("panel-courses");
-    if (panel) Dash.renderLoading(panel, "Loading platform courses…");
+    if (panel) Dash.renderSkeletonTable(panel, 4, 6);
 
     try {
       var data = await API.get("courses?limit=200");
@@ -315,7 +315,7 @@
   // 6. News & Announcements
   async function loadAnnouncements() {
     var panel = document.getElementById("panel-announcements");
-    if (panel) Dash.renderLoading(panel, "Loading platform announcements…");
+    if (panel) Dash.renderSkeletonTable(panel, 3, 5);
 
     try {
       var data = await API.get("notifications/admin?limit=100");
@@ -1177,20 +1177,26 @@
     onReady: async function (ctx) {
       wireEvents();
 
+      // Render overview section immediately so the dashboard shell is interactive
+      switchSection(window.location.hash || "#overview");
+
       try {
-        var me = await API.get("auth/me");
-        state.user = me;
+        var mePromise = API.get("auth/me").then(function (me) {
+          state.user = me;
+          var topName = document.getElementById("user-name");
+          if (topName) topName.textContent = me.name || ctx.name;
+          var topSub = document.getElementById("user-sub");
+          if (topSub) topSub.textContent = me.email || ctx.user.email;
+          var welcomeName = document.getElementById("welcome-name");
+          if (welcomeName) welcomeName.textContent = (me.name || ctx.name || "").split(" ")[0] || "Admin";
+          renderProfileView();
+          return me;
+        }).catch(function (e) {
+          console.warn("admin auth/me notice:", e);
+        });
 
-        var topName = document.getElementById("user-name");
-        if (topName) topName.textContent = me.name || ctx.name;
-        var topSub = document.getElementById("user-sub");
-        if (topSub) topSub.textContent = me.email || ctx.user.email;
-        var welcomeName = document.getElementById("welcome-name");
-        if (welcomeName) welcomeName.textContent = (me.name || ctx.name || "").split(" ")[0] || "Admin";
-
-        renderProfileView();
-
-        await Promise.all([
+        await Promise.allSettled([
+          mePromise,
           loadDashboardMetrics(),
           loadApprovals(),
           loadUsers(),
@@ -1198,8 +1204,6 @@
           loadCourses(),
           loadAnnouncements()
         ]);
-
-        switchSection(window.location.hash || "#overview");
       } catch (err) {
         console.error("Admin initialization error:", err);
         showToast("Error initializing admin dashboard: " + (err.message || "Please refresh"), "error");

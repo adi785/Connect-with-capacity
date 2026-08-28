@@ -259,7 +259,7 @@
   // 3. Courses List
   async function loadCourses() {
     var body = document.getElementById("courses-body");
-    if (body) Dash.renderLoading(body, "Loading your courses…");
+    if (body) Dash.renderSkeletonCards(body, 3);
 
     try {
       var res = await API.get("courses?mine=true&limit=100");
@@ -268,7 +268,6 @@
 
       renderCoursesList();
       populateTraineeCourseFilter();
-      loadDashboardMetrics();
     } catch (err) {
       console.error("Failed to load courses:", err);
       if (body) {
@@ -282,7 +281,7 @@
   // 4. Competencies
   async function loadCompetencies() {
     var body = document.getElementById("competencies-body");
-    if (body) Dash.renderLoading(body, "Loading your competency records…");
+    if (body) Dash.renderSkeletonTable(body, 3, 4);
 
     if (!state.trainerProfileId) {
       if (body) Dash.renderEmpty(body, "No trainer profile found.", "Your trainer account record is missing profile mapping.");
@@ -322,42 +321,40 @@
     }
   }
 
-  // 6. Trainees
+  // 6. Trainees (Single bulk query across all courses)
   async function loadTrainees() {
     var body = document.getElementById("trainees-body");
-    if (body) Dash.renderLoading(body, "Loading trainee participant rosters…");
-
-    if (!state.courses || !state.courses.length) {
-      if (body) Dash.renderEmpty(body, "No trainees enrolled yet.", "Learners who enrol in your published courses will be listed here.");
-      return;
-    }
+    if (body) Dash.renderSkeletonTable(body, 4, 6);
 
     try {
-      var allTrainees = [];
-      // Fetch participants for each course
-      for (var i = 0; i < state.courses.length; i++) {
-        var course = state.courses[i];
-        try {
-          var partRes = await API.get("courses/" + course.id + "/participants?limit=100");
-          var items = (partRes && partRes.items) || (Array.isArray(partRes) ? partRes : []);
-          items.forEach(function (t) {
-            t.course_title = course.title;
-            t.course_id = course.id;
-            allTrainees.push(t);
-          });
-        } catch (subErr) {
-          console.warn("Could not fetch participants for course " + course.id, subErr);
-        }
-      }
-
-      state.trainees = allTrainees;
+      var partRes = await API.get("courses/trainer/participants?limit=200");
+      var items = (partRes && partRes.items) || (Array.isArray(partRes) ? partRes : []);
+      state.trainees = items;
       renderTraineesList();
     } catch (err) {
-      console.error("Failed to load trainees:", err);
-      if (body) {
-        Dash.renderError(body, "Could not load trainee rosters: " + (err.message || "Network error"), function () {
-          loadTrainees();
-        });
+      console.error("Bulk participants query failed, falling back:", err);
+      try {
+        var allTrainees = [];
+        for (var i = 0; i < state.courses.length; i++) {
+          var course = state.courses[i];
+          try {
+            var subRes = await API.get("courses/" + course.id + "/participants?limit=100");
+            var subItems = (subRes && subRes.items) || (Array.isArray(subRes) ? subRes : []);
+            subItems.forEach(function (t) {
+              t.course_title = course.title;
+              t.course_id = course.id;
+              allTrainees.push(t);
+            });
+          } catch (e) {}
+        }
+        state.trainees = allTrainees;
+        renderTraineesList();
+      } catch (fallbackErr) {
+        if (body) {
+          Dash.renderError(body, "Could not load trainee rosters: " + (err.message || "Network error"), function () {
+            loadTrainees();
+          });
+        }
       }
     }
   }
@@ -2147,40 +2144,38 @@
     onReady: async function (ctx) {
       bindGlobalEvents();
 
+      // Render default section immediately so the shell is live and responsive
+      switchSection(window.location.hash || "#overview");
+
       try {
-        // 1. Resolve current user & trainer_profile_id from /auth/me
-        var me = await API.get("auth/me");
-        state.user = me;
-        state.trainerProfileId = me.trainer_profile_id;
+        // 1. Resolve current user identity from /auth/me concurrently or from ctx
+        var mePromise = API.get("auth/me").then(function (me) {
+          state.user = me;
+          state.trainerProfileId = me.trainer_profile_id;
 
-        // Update header user information
-        var topName = document.getElementById("user-name");
-        if (topName) topName.textContent = me.name || ctx.name;
-        var topSub = document.getElementById("user-sub");
-        if (topSub) topSub.textContent = me.email || ctx.user.email;
-        var welcomeName = document.getElementById("welcome-name");
-        if (welcomeName) welcomeName.textContent = (me.name || ctx.name || "").split(" ")[0] || "Trainer";
+          var topName = document.getElementById("user-name");
+          if (topName) topName.textContent = me.name || ctx.name;
+          var topSub = document.getElementById("user-sub");
+          if (topSub) topSub.textContent = me.email || ctx.user.email;
+          var welcomeName = document.getElementById("welcome-name");
+          if (welcomeName) welcomeName.textContent = (me.name || ctx.name || "").split(" ")[0] || "Trainer";
+          return me;
+        }).catch(function (e) {
+          console.warn("auth/me notice:", e);
+        });
 
-        // 2. Load subjects taxonomy
-        await loadSubjects();
-
-        // 3. Load authored courses
-        await loadCourses();
-
-        // 4. Load competencies
-        await loadCompetencies();
-
-        // 5. Load profile & skills
-        await loadProfile();
-
-        // 6. Load trainee rosters
-        await loadTrainees();
-
-        // 7. Load announcements
-        await loadAnnouncements();
-
-        // 8. Route to active section or default to #overview
-        switchSection(window.location.hash || "#overview");
+        // 2. Fire all primary queries concurrently in parallel with Promise.allSettled
+        await Promise.allSettled([
+          mePromise.then(function () {
+            return loadCompetencies();
+          }),
+          loadDashboardMetrics(),
+          loadSubjects(),
+          loadCourses(),
+          loadProfile(),
+          loadTrainees(),
+          loadAnnouncements()
+        ]);
       } catch (err) {
         console.error("Error during trainer workspace initialization:", err);
         showToast("Error initializing workspace: " + (err.message || "Please refresh"), "error");

@@ -167,10 +167,10 @@ const Auth = {
 
 
     /*
-     * Get Capacity Connect profile
+     * Get Capacity Connect profile (with automatic self-healing sync)
      */
 
-    const {
+    let {
       data: profile,
       error: profileError
     } = await supabaseClient
@@ -181,17 +181,44 @@ const Auth = {
 
 
     if (profileError) {
-
-      await supabaseClient.auth.signOut();
-
-      console.error(
-        "Profile lookup failed:",
+      console.warn(
+        "Direct profile lookup notice:",
         profileError
       );
+    }
 
-      throw new Error(
-        "Unable to load your account profile."
-      );
+
+    if (!profile) {
+      // Self-heal: extract metadata from Supabase user and insert profile if allowed by RLS
+      const userMeta = data.user.user_metadata || {};
+      const fallbackName = userMeta.full_name || userMeta.name || (data.user.email ? data.user.email.split("@")[0] : "User");
+      const fallbackEmpId = userMeta.employee_id || ("EMP-" + data.user.id.substring(0, 6));
+      const userRole = userMeta.role || role || "trainee";
+      const initialStatus = userRole === "trainer" ? "pending" : "approved";
+
+      try {
+        const { data: createdProfile, error: createError } = await supabaseClient
+          .from("profiles")
+          .insert({
+            id: data.user.id,
+            firebase_uid: data.user.id,
+            name: fallbackName,
+            email: data.user.email,
+            employee_id: fallbackEmpId,
+            role: userRole,
+            status: initialStatus
+          })
+          .select("*")
+          .maybeSingle();
+
+        if (!createError && createdProfile) {
+          profile = createdProfile;
+        } else if (createError) {
+          console.warn("Client profile auto-sync notice:", createError);
+        }
+      } catch (insertEx) {
+        console.warn("Client profile creation exception:", insertEx);
+      }
     }
 
 
@@ -340,7 +367,7 @@ const Auth = {
 
     try {
 
-      const {
+      let {
         data,
         error
       } = await supabaseClient
@@ -350,13 +377,45 @@ const Auth = {
         .maybeSingle();
 
       if (error) {
-
-        console.error(
-          "Unable to load profile:",
+        console.warn(
+          "Direct profile lookup notice in getProfile:",
           error
         );
+      }
 
-        return null;
+      if (!data) {
+        // Fallback: check active session user metadata and auto-sync
+        const { data: sessionData } = await supabaseClient.auth.getSession();
+        const currentUser = sessionData?.session?.user;
+        if (currentUser && currentUser.id === userId) {
+          const userMeta = currentUser.user_metadata || {};
+          const fallbackName = userMeta.full_name || userMeta.name || (currentUser.email ? currentUser.email.split("@")[0] : "User");
+          const fallbackEmpId = userMeta.employee_id || ("EMP-" + currentUser.id.substring(0, 6));
+          const userRole = userMeta.role || "trainee";
+          const initialStatus = userRole === "trainer" ? "pending" : "approved";
+
+          try {
+            const { data: createdProfile } = await supabaseClient
+              .from("profiles")
+              .insert({
+                id: currentUser.id,
+                firebase_uid: currentUser.id,
+                name: fallbackName,
+                email: currentUser.email,
+                employee_id: fallbackEmpId,
+                role: userRole,
+                status: initialStatus
+              })
+              .select("*")
+              .maybeSingle();
+
+            if (createdProfile) {
+              data = createdProfile;
+            }
+          } catch (createEx) {
+            console.warn("Client profile auto-sync notice in getProfile:", createEx);
+          }
+        }
       }
 
       return data;

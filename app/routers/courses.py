@@ -302,6 +302,32 @@ async def enroll(
 
 
 @router.get(
+    "/trainer/participants",
+    response_model=Page[EnrollmentResponse],
+    summary="All participants enrolled across courses you authored (trainer/admin)",
+)
+async def list_trainer_participants(
+    course_id: Optional[uuid.UUID] = None,
+    status_filter: Optional[str] = Query(
+        default=None, alias="status", pattern="^(enrolled|in_progress|completed|dropped)$"
+    ),
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    current_user: CurrentUser = Depends(require_trainer_or_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Page[EnrollmentResponse]:
+    items, total = await enrollment_service.list_trainer_participants(
+        db, current_user, course_id=course_id, status=status_filter, limit=limit, offset=offset
+    )
+    return Page[EnrollmentResponse](
+        items=[EnrollmentResponse.model_validate(i) for i in items],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.get(
     "/{course_id}/participants",
     response_model=Page[EnrollmentResponse],
     summary="Roster for a course you own (trainer/admin)",

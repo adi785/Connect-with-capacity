@@ -86,44 +86,66 @@ async def _top_courses(
 
 
 async def admin_dashboard(db: AsyncSession) -> dict[str, Any]:
-    users_total = (await db.scalar(select(func.count(Profile.id)))) or 0
-    users_pending = (
-        await db.scalar(select(func.count(Profile.id)).where(Profile.status == "pending"))
-    ) or 0
-    users_by_role = await _counts_by(
-        db, Profile.role, select(Profile.role, func.count(Profile.id))
+    query = select(
+        select(func.count(Profile.id)).scalar_subquery().label("users_total"),
+        select(func.count(Profile.id)).where(Profile.status == "pending").scalar_subquery().label("users_pending"),
+        select(func.count(Profile.id)).where(Profile.role == "trainee").scalar_subquery().label("role_trainee"),
+        select(func.count(Profile.id)).where(Profile.role == "trainer").scalar_subquery().label("role_trainer"),
+        select(func.count(Profile.id)).where(Profile.role == "admin").scalar_subquery().label("role_admin"),
+
+        select(func.count(Course.id)).scalar_subquery().label("courses_total"),
+        select(func.count(Course.id)).where(Course.status == "published").scalar_subquery().label("courses_published"),
+        select(func.count(Course.id)).where(Course.status == "draft").scalar_subquery().label("courses_draft"),
+        select(func.count(Course.id)).where(Course.status == "archived").scalar_subquery().label("courses_archived"),
+
+        select(func.count(Enrollment.id)).scalar_subquery().label("enrollments_total"),
+        select(func.count(Enrollment.id)).where(Enrollment.status == "completed").scalar_subquery().label("enrollments_completed"),
+        select(func.count(Enrollment.id)).where(Enrollment.status == "in_progress").scalar_subquery().label("enrollments_in_progress"),
+        select(func.count(Enrollment.id)).where(Enrollment.status == "enrolled").scalar_subquery().label("enrollments_enrolled"),
+        select(func.count(Enrollment.id)).where(Enrollment.status == "dropped").scalar_subquery().label("enrollments_dropped"),
+
+        select(func.count(Assessment.id)).scalar_subquery().label("assessments_total"),
+        select(func.count(AssessmentAttempt.id)).scalar_subquery().label("attempts_total"),
+        select(func.count(AssessmentAttempt.id)).where(AssessmentAttempt.status == "submitted").scalar_subquery().label("attempts_submitted"),
+        select(func.avg(AssessmentAttempt.score)).where(AssessmentAttempt.status == "submitted").scalar_subquery().label("avg_score"),
+        select(func.count(AssessmentAttempt.id)).where(
+            AssessmentAttempt.status == "submitted",
+            AssessmentAttempt.score >= Assessment.pass_percentage
+        ).select_from(AssessmentAttempt).join(Assessment, Assessment.id == AssessmentAttempt.assessment_id).scalar_subquery().label("attempts_passed"),
+
+        select(func.count(CertificateIssued.id)).scalar_subquery().label("certificates"),
+        select(func.avg(Feedback.rating)).scalar_subquery().label("avg_rating"),
     )
 
-    courses_total = (await db.scalar(select(func.count(Course.id)))) or 0
-    courses_by_status = await _counts_by(
-        db, Course.status, select(Course.status, func.count(Course.id))
-    )
+    row = (await db.execute(query)).one()
 
-    enrollments_total = (await db.scalar(select(func.count(Enrollment.id)))) or 0
-    enrollments_by_status = await _counts_by(
-        db, Enrollment.status, select(Enrollment.status, func.count(Enrollment.id))
-    )
-    completed = enrollments_by_status.get("completed", 0)
+    users_total = int(row.users_total or 0)
+    users_pending = int(row.users_pending or 0)
+    users_by_role = {
+        "trainee": int(row.role_trainee or 0),
+        "trainer": int(row.role_trainer or 0),
+        "admin": int(row.role_admin or 0),
+    }
 
-    assessments_total = (await db.scalar(select(func.count(Assessment.id)))) or 0
-    attempts_total = (await db.scalar(select(func.count(AssessmentAttempt.id)))) or 0
-    attempts_submitted = (
-        await db.scalar(
-            select(func.count(AssessmentAttempt.id)).where(
-                AssessmentAttempt.status == "submitted"
-            )
-        )
-    ) or 0
+    courses_total = int(row.courses_total or 0)
+    courses_by_status = {
+        "published": int(row.courses_published or 0),
+        "draft": int(row.courses_draft or 0),
+        "archived": int(row.courses_archived or 0),
+    }
 
-    average_score = await db.scalar(
-        select(func.avg(AssessmentAttempt.score)).where(
-            AssessmentAttempt.status == "submitted"
-        )
-    )
-    pass_rate = await _pass_rate(db)
+    enrollments_total = int(row.enrollments_total or 0)
+    completed = int(row.enrollments_completed or 0)
+    enrollments_by_status = {
+        "completed": completed,
+        "in_progress": int(row.enrollments_in_progress or 0),
+        "enrolled": int(row.enrollments_enrolled or 0),
+        "dropped": int(row.enrollments_dropped or 0),
+    }
 
-    certificates = (await db.scalar(select(func.count(CertificateIssued.id)))) or 0
-    average_rating = await db.scalar(select(func.avg(Feedback.rating)))
+    attempts_submitted = int(row.attempts_submitted or 0)
+    attempts_passed = int(row.attempts_passed or 0)
+    pass_rate = round(attempts_passed / attempts_submitted * 100, 2) if attempts_submitted else None
 
     return {
         "users_total": users_total,
@@ -136,134 +158,59 @@ async def admin_dashboard(db: AsyncSession) -> dict[str, Any]:
         "completion_rate": round(completed / enrollments_total * 100, 2)
         if enrollments_total
         else 0.0,
-        "assessments_total": assessments_total,
-        "attempts_total": attempts_total,
+        "assessments_total": int(row.assessments_total or 0),
+        "attempts_total": int(row.attempts_total or 0),
         "attempts_submitted": attempts_submitted,
-        "average_score": round(float(average_score), 2) if average_score is not None else None,
+        "average_score": round(float(row.avg_score), 2) if row.avg_score is not None else None,
         "pass_rate": pass_rate,
-        "certificates_issued": certificates,
-        "average_course_rating": round(float(average_rating), 2)
-        if average_rating is not None
+        "certificates_issued": int(row.certificates or 0),
+        "average_course_rating": round(float(row.avg_rating), 2)
+        if row.avg_rating is not None
         else None,
         "top_courses": await _top_courses(db),
     }
-
-
-async def _pass_rate(
-    db: AsyncSession, assessment_ids: list[uuid.UUID] | None = None
-) -> float | None:
-    """Share of submitted attempts at or above their assessment's pass mark."""
-    query = (
-        select(
-            func.count(AssessmentAttempt.id),
-            func.count(AssessmentAttempt.id).filter(
-                AssessmentAttempt.score >= Assessment.pass_percentage
-            ),
-        )
-        .join(Assessment, Assessment.id == AssessmentAttempt.assessment_id)
-        .where(AssessmentAttempt.status == "submitted")
-    )
-    if assessment_ids is not None:
-        if not assessment_ids:
-            return None
-        query = query.where(AssessmentAttempt.assessment_id.in_(assessment_ids))
-
-    row = (await db.execute(query)).one_or_none()
-    if not row or not row[0]:
-        return None
-    return round(row[1] / row[0] * 100, 2)
 
 
 # ------------------------------ Trainer view ------------------------------
 
 
 async def trainer_dashboard(db: AsyncSession, current_user: CurrentUser) -> dict[str, Any]:
-    """Aggregates limited to courses this trainer authored."""
+    """Aggregates limited to courses this trainer authored in a single combined query."""
     trainer_id = current_user.trainer_profile_id
     if trainer_id is None:
         return {}
+
+    single_query = select(
+        select(func.count(Course.id)).where(Course.created_by == trainer_id).scalar_subquery().label("courses_total"),
+        select(func.count(Course.id)).where(Course.created_by == trainer_id, Course.status == "published").scalar_subquery().label("courses_published"),
+        select(func.count(Enrollment.id)).join(Course, Course.id == Enrollment.course_id).where(Course.created_by == trainer_id).scalar_subquery().label("enrollments_total"),
+        select(func.count(Enrollment.id)).join(Course, Course.id == Enrollment.course_id).where(Course.created_by == trainer_id, Enrollment.status == "completed").scalar_subquery().label("completions_total"),
+        select(func.count(Assessment.id)).join(Course, Course.id == Assessment.course_id).where(Course.created_by == trainer_id).scalar_subquery().label("assessments_total"),
+        select(func.count(AssessmentAttempt.id)).join(Assessment, Assessment.id == AssessmentAttempt.assessment_id).join(Course, Course.id == Assessment.course_id).where(Course.created_by == trainer_id, AssessmentAttempt.status == "submitted").scalar_subquery().label("attempts_submitted"),
+        select(func.avg(AssessmentAttempt.score)).join(Assessment, Assessment.id == AssessmentAttempt.assessment_id).join(Course, Course.id == Assessment.course_id).where(Course.created_by == trainer_id, AssessmentAttempt.status == "submitted").scalar_subquery().label("average_score"),
+        select(func.avg(Feedback.rating)).join(Course, Course.id == Feedback.course_id).where(Course.created_by == trainer_id).scalar_subquery().label("average_rating"),
+    )
+
+    row = (await db.execute(single_query)).one()
 
     course_ids = list(
         (
             await db.scalars(select(Course.id).where(Course.created_by == trainer_id))
         ).all()
     )
-    if not course_ids:
-        return {
-            "courses_total": 0,
-            "courses_published": 0,
-            "enrollments_total": 0,
-            "completions_total": 0,
-            "assessments_total": 0,
-            "attempts_submitted": 0,
-            "average_score": None,
-            "average_course_rating": None,
-            "top_courses": [],
-        }
-
-    courses_published = (
-        await db.scalar(
-            select(func.count(Course.id)).where(
-                Course.created_by == trainer_id, Course.status == "published"
-            )
-        )
-    ) or 0
-
-    enrollments_total = (
-        await db.scalar(
-            select(func.count(Enrollment.id)).where(Enrollment.course_id.in_(course_ids))
-        )
-    ) or 0
-    completions_total = (
-        await db.scalar(
-            select(func.count(Enrollment.id)).where(
-                Enrollment.course_id.in_(course_ids), Enrollment.status == "completed"
-            )
-        )
-    ) or 0
-
-    assessment_ids = list(
-        (
-            await db.scalars(
-                select(Assessment.id).where(Assessment.course_id.in_(course_ids))
-            )
-        ).all()
-    )
-
-    attempts_submitted = 0
-    average_score = None
-    if assessment_ids:
-        attempts_submitted = (
-            await db.scalar(
-                select(func.count(AssessmentAttempt.id)).where(
-                    AssessmentAttempt.assessment_id.in_(assessment_ids),
-                    AssessmentAttempt.status == "submitted",
-                )
-            )
-        ) or 0
-        average_score = await db.scalar(
-            select(func.avg(AssessmentAttempt.score)).where(
-                AssessmentAttempt.assessment_id.in_(assessment_ids),
-                AssessmentAttempt.status == "submitted",
-            )
-        )
-
-    average_rating = await db.scalar(
-        select(func.avg(Feedback.rating)).where(Feedback.course_id.in_(course_ids))
-    )
 
     return {
-        "courses_total": len(course_ids),
-        "courses_published": courses_published,
-        "enrollments_total": enrollments_total,
-        "completions_total": completions_total,
-        "assessments_total": len(assessment_ids),
-        "attempts_submitted": attempts_submitted,
-        "average_score": round(float(average_score), 2) if average_score is not None else None,
-        "average_course_rating": round(float(average_rating), 2)
-        if average_rating is not None
+        "courses_total": int(row.courses_total or 0),
+        "courses_published": int(row.courses_published or 0),
+        "enrollments_total": int(row.enrollments_total or 0),
+        "completions_total": int(row.completions_total or 0),
+        "assessments_total": int(row.assessments_total or 0),
+        "attempts_submitted": int(row.attempts_submitted or 0),
+        "average_score": round(float(row.average_score), 2) if row.average_score is not None else None,
+        "average_course_rating": round(float(row.average_rating), 2)
+        if row.average_rating is not None
         else None,
-        "top_courses": await _top_courses(db, course_ids=course_ids),
+        "top_courses": await _top_courses(db, course_ids=course_ids) if course_ids else [],
     }
 
 

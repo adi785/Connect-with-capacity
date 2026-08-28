@@ -191,6 +191,54 @@ async def list_course_participants(
     return items, total
 
 
+async def list_trainer_participants(
+    db: AsyncSession,
+    current_user: CurrentUser,
+    *,
+    course_id: uuid.UUID | None = None,
+    status: str | None = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> tuple[list[dict[str, Any]], int]:
+    """All participants enrolled across courses authored by this trainer (or admin)."""
+    trainer_id = current_user.trainer_profile_id
+    if not current_user.is_admin and not trainer_id:
+        return [], 0
+
+    query = (
+        select(Enrollment, Course.title, Profile.name, Profile.email)
+        .join(Course, Course.id == Enrollment.course_id)
+        .join(TraineeProfile, TraineeProfile.id == Enrollment.trainee_profile_id)
+        .join(Profile, Profile.id == TraineeProfile.user_id)
+    )
+    count_q = (
+        select(func.count(Enrollment.id))
+        .join(Course, Course.id == Enrollment.course_id)
+    )
+
+    if not current_user.is_admin and trainer_id:
+        query = query.where(Course.created_by == trainer_id)
+        count_q = count_q.where(Course.created_by == trainer_id)
+
+    if course_id:
+        query = query.where(Enrollment.course_id == course_id)
+        count_q = count_q.where(Enrollment.course_id == course_id)
+
+    if status:
+        query = query.where(Enrollment.status == status)
+        count_q = count_q.where(Enrollment.status == status)
+
+    total = (await db.scalar(count_q)) or 0
+    rows = await db.execute(
+        query.order_by(Enrollment.enrolled_at.desc()).limit(limit).offset(offset)
+    )
+    items = [
+        _serialize(enrollment, course_title=c_title, trainee_name=name, trainee_email=email)
+        for enrollment, c_title, name, email in rows.all()
+    ]
+    return items, total
+
+
 def _serialize(
     enrollment: Enrollment,
     *,
@@ -225,3 +273,4 @@ async def is_enrolled(
         )
     )
     return bool(count)
+

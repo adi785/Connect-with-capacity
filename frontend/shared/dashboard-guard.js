@@ -271,6 +271,42 @@
       "</div>";
   };
 
+  Dash.renderSkeletonCards = function (target, count) {
+    if (!target) return;
+    count = count || 3;
+    var html = '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; width:100%;">';
+    for (var i = 0; i < count; i++) {
+      html += '<div class="skeleton-card">' +
+        '<div class="skeleton skeleton--title"></div>' +
+        '<div class="skeleton skeleton--text"></div>' +
+        '<div class="skeleton skeleton--text" style="width:75%;"></div>' +
+        '<div style="display:flex; justify-content:space-between; margin-top:8px;">' +
+        '<div class="skeleton skeleton--pill"></div>' +
+        '<div class="skeleton skeleton--pill" style="width:80px;"></div>' +
+        '</div>' +
+        '</div>';
+    }
+    html += '</div>';
+    target.innerHTML = html;
+  };
+
+  Dash.renderSkeletonTable = function (target, rowCount, colCount) {
+    if (!target) return;
+    rowCount = rowCount || 4;
+    colCount = colCount || 4;
+    var html = '<div class="table-scroll"><table class="data-table" style="width:100%; border-collapse:collapse;"><tbody>';
+    for (var r = 0; r < rowCount; r++) {
+      html += '<tr style="border-bottom:1px solid var(--border-light);">';
+      for (var c = 0; c < colCount; c++) {
+        var w = c === 0 ? "70%" : (c === colCount - 1 ? "40%" : "60%");
+        html += '<td style="padding:16px 20px;"><div class="skeleton skeleton--text" style="width:' + w + '; margin:0;"></div></td>';
+      }
+      html += '</tr>';
+    }
+    html += '</tbody></table></div>';
+    target.innerHTML = html;
+  };
+
   Dash.renderEmpty = function (target, title, text) {
     if (!target) {
       return;

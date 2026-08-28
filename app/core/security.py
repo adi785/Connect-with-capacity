@@ -14,6 +14,7 @@ import base64
 import binascii
 import json
 import logging
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -26,6 +27,9 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 _jwks_client: jwt.PyJWKClient | None = None
+_token_cache: dict[str, tuple[float, "VerifiedToken"]] = {}
+_TOKEN_CACHE_TTL = 60.0  # Cache verified tokens for 60 seconds
+_MAX_TOKEN_CACHE_SIZE = 1000
 
 
 @dataclass(slots=True)
@@ -244,10 +248,34 @@ def verify_supabase_token(token: str) -> VerifiedToken:
         raise _credential_error("Missing authentication token")
 
     raw = token.strip()
-    if settings.resolved_auth_mode == "dev" or (not settings.is_production and raw.count(".") != 2):
-        return _verify_dev(raw)
 
-    return _verify_with_supabase(raw)
+    now = time.time()
+    cached = _token_cache.get(raw)
+    if cached is not None:
+        cached_time, verified_token = cached
+        if now - cached_time < _TOKEN_CACHE_TTL:
+            return verified_token
+        else:
+            _token_cache.pop(raw, None)
+
+    if settings.resolved_auth_mode == "dev" or (not settings.is_production and raw.count(".") != 2):
+        verified = _verify_dev(raw)
+    else:
+        verified = _verify_with_supabase(raw)
+
+    if len(_token_cache) >= _MAX_TOKEN_CACHE_SIZE:
+        # Simple prune: remove oldest 20%
+        expired_keys = [k for k, (t, _) in _token_cache.items() if now - t >= _TOKEN_CACHE_TTL]
+        if expired_keys:
+            for k in expired_keys:
+                _token_cache.pop(k, None)
+        else:
+            to_remove = list(_token_cache.keys())[:200]
+            for k in to_remove:
+                _token_cache.pop(k, None)
+
+    _token_cache[raw] = (now, verified)
+    return verified
 
 
 # Backwards-compatible aliases

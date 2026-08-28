@@ -120,7 +120,7 @@
               </a>
             </li>
             <li>
-              <a class="dash-nav__link" href="#user-management">
+              <a class="dash-nav__link" href="#user-management" id="nav-link-users">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -137,7 +137,51 @@
               </a>
             </li>
             <li>
-              <a class="dash-nav__link" href="#profile">
+              <a class="dash-nav__link" href="#course-management" id="nav-link-courses">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  aria-hidden="true"
+                >
+                  <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5Z" />
+                  <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5A1.5 1.5 0 0 0 20 18.5Z" />
+                </svg>
+                Course Management
+              </a>
+            </li>
+            <li>
+              <a class="dash-nav__link" href="#announcements-management" id="nav-link-announcements">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  aria-hidden="true"
+                >
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                News &amp; Announcements
+              </a>
+            </li>
+            <li>
+              <a class="dash-nav__link" href="#taxonomy-management" id="nav-link-taxonomy">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  aria-hidden="true"
+                >
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+                Taxonomy &amp; Competencies
+              </a>
+            </li>
+            <li>
+              <a class="dash-nav__link" href="#profile" id="nav-link-profile">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -354,7 +398,102 @@
             ></div>
           </section>
 
-          <section class="panel" id="profile" aria-labelledby="profile-title">
+          <!-- Course management -------------------------------------------- -->
+          <section class="panel" id="course-management" aria-labelledby="course-management-title" hidden>
+            <div class="panel__head">
+              <div class="panel__titles">
+                <h2 class="panel__title" id="course-management-title">Platform Course Management</h2>
+                <p class="panel__sub">
+                  Inspect all courses created across the platform. Approve, publish, unpublish, or archive courses.
+                </p>
+              </div>
+              <button class="btn btn--sm btn--orange" id="btn-refresh-courses" type="button">↻ Refresh Courses</button>
+            </div>
+
+            <div class="filter-bar">
+              <div class="filter-bar__search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="search" class="form-input" id="admin-courses-search" placeholder="Search courses by title or trainer…" aria-label="Search courses" />
+              </div>
+              <div class="filter-bar__actions">
+                <select class="form-select" id="admin-courses-status-filter" aria-label="Filter by status">
+                  <option value="">All Statuses</option>
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="archived">Archived</option>
+                </select>
+                <select class="form-select" id="admin-courses-subject-filter" aria-label="Filter by subject">
+                  <option value="">All Subjects</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="panel__body panel__body--flush" id="panel-courses"></div>
+          </section>
+
+          <!-- News & Announcements management ------------------------------- -->
+          <section class="panel" id="announcements-management" aria-labelledby="announcements-title" hidden>
+            <div class="panel__head">
+              <div class="panel__titles">
+                <h2 class="panel__title" id="announcements-title">News &amp; Platform Announcements</h2>
+                <p class="panel__sub">
+                  Create, draft, preview, publish, and target announcements to Trainees, Trainers, or All users.
+                </p>
+              </div>
+              <button class="btn btn--sm btn--orange" id="btn-open-create-announcement" type="button">
+                + Create Announcement
+              </button>
+            </div>
+
+            <div class="filter-bar">
+              <div class="filter-bar__search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="search" class="form-input" id="admin-announcements-search" placeholder="Search announcements…" aria-label="Search announcements" />
+              </div>
+              <div class="filter-bar__actions">
+                <select class="form-select" id="admin-announcements-status-filter" aria-label="Filter by status">
+                  <option value="">All Statuses</option>
+                  <option value="draft">Drafts</option>
+                  <option value="published">Published</option>
+                  <option value="archived">Archived</option>
+                </select>
+                <select class="form-select" id="admin-announcements-audience-filter" aria-label="Filter by target audience">
+                  <option value="">All Audiences</option>
+                  <option value="all">Everyone (All)</option>
+                  <option value="trainee">Trainees Only</option>
+                  <option value="trainer">Trainers Only</option>
+                  <option value="admin">Admins Only</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="panel__body panel__body--flush" id="panel-announcements"></div>
+          </section>
+
+          <!-- Taxonomy & Competencies management ----------------------------- -->
+          <section class="panel" id="taxonomy-management" aria-labelledby="taxonomy-title" hidden>
+            <div class="panel__head">
+              <div class="panel__titles">
+                <h2 class="panel__title" id="taxonomy-title">Subject &amp; Competency Taxonomy</h2>
+                <p class="panel__sub">
+                  Standard subjects used for curriculum mapping, competency matching, and learning pathways.
+                </p>
+              </div>
+              <button class="btn btn--sm btn--orange" id="btn-open-create-subject" type="button">
+                + Add Subject Taxonomy
+              </button>
+            </div>
+
+            <div class="panel__body panel__body--flush" id="panel-taxonomy"></div>
+          </section>
+
+          <section class="panel" id="profile" aria-labelledby="profile-title" hidden>
             <div class="panel__head">
               <div class="panel__titles">
                 <h2 class="panel__title" id="profile-title">My profile</h2>
@@ -368,7 +507,7 @@
 
       <footer class="dash-footer">
         <div class="shell dash-footer__inner">
-          <span>© 2026 Capacity Connect</span>
+          <span>© 2026 Capacity Connect · Ministry of Skill Development &amp; Entrepreneurship</span>
           <span>
             <a href="../homepage/index.html">Home</a>
             &nbsp;·&nbsp;
@@ -377,6 +516,205 @@
         </div>
       </footer>
     </div>
+
+    <!-- =========================================================================
+         ADMIN MODALS
+         ========================================================================= -->
+
+    <!-- Modal: Create Announcement -->
+    <div class="modal-backdrop" id="modal-create-announcement" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-create-ann-title">
+      <div class="modal modal--lg">
+        <div class="modal__header">
+          <h3 class="modal__title" id="modal-create-ann-title">Create Announcement / News</h3>
+          <button class="modal__close" type="button" data-modal-close aria-label="Close modal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <form id="form-create-announcement">
+          <div class="modal__body">
+            <div class="form-group">
+              <label class="form-label" for="create-ann-title">Headline / Title <span class="required">*</span></label>
+              <input type="text" class="form-input" id="create-ann-title" name="title" required maxlength="200" placeholder="e.g. Schedule for Q3 Capacity Building Webinars" />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="create-ann-category">Category</label>
+                <input type="text" class="form-input" id="create-ann-category" name="category" maxlength="100" placeholder="e.g. Workshop, System Alert, Curriculum, General" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="create-ann-target">Target Audience <span class="required">*</span></label>
+                <select class="form-select" id="create-ann-target" name="targetRole" required>
+                  <option value="all" selected>All Users (Trainees + Trainers + Admins)</option>
+                  <option value="trainee">Trainees Only</option>
+                  <option value="trainer">Trainers Only</option>
+                  <option value="admin">Admins Only</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="create-ann-summary">Short Summary</label>
+              <input type="text" class="form-input" id="create-ann-summary" name="summary" maxlength="300" placeholder="One-line overview displayed in feeds and cards…" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="create-ann-body">Full Content / Body</label>
+              <textarea class="form-textarea" id="create-ann-body" name="body" rows="5" placeholder="Detailed announcement text, instructions, links, or agenda…"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="create-ann-status">Status</label>
+              <select class="form-select" id="create-ann-status" name="status">
+                <option value="published" selected>Publish Immediately</option>
+                <option value="draft">Save as Draft (Do not broadcast yet)</option>
+              </select>
+            </div>
+
+            <div class="form-error" id="create-ann-error" hidden></div>
+          </div>
+          <div class="modal__footer">
+            <button class="btn btn--outline btn--sm" type="button" data-modal-close>Cancel</button>
+            <button class="btn btn--ghost-dark btn--sm" type="button" id="btn-preview-create-ann">Preview</button>
+            <button class="btn btn--orange btn--sm" type="submit" id="btn-submit-create-ann">Save &amp; Broadcast</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Edit Announcement -->
+    <div class="modal-backdrop" id="modal-edit-announcement" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-edit-ann-title">
+      <div class="modal modal--lg">
+        <div class="modal__header">
+          <h3 class="modal__title" id="modal-edit-ann-title">Edit Announcement</h3>
+          <button class="modal__close" type="button" data-modal-close aria-label="Close modal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <form id="form-edit-announcement">
+          <input type="hidden" id="edit-ann-id" />
+          <div class="modal__body">
+            <div class="form-group">
+              <label class="form-label" for="edit-ann-title">Headline / Title <span class="required">*</span></label>
+              <input type="text" class="form-input" id="edit-ann-title" name="title" required maxlength="200" />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="edit-ann-category">Category</label>
+                <input type="text" class="form-input" id="edit-ann-category" name="category" maxlength="100" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="edit-ann-target">Target Audience <span class="required">*</span></label>
+                <select class="form-select" id="edit-ann-target" name="targetRole" required>
+                  <option value="all">All Users</option>
+                  <option value="trainee">Trainees Only</option>
+                  <option value="trainer">Trainers Only</option>
+                  <option value="admin">Admins Only</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="edit-ann-summary">Short Summary</label>
+              <input type="text" class="form-input" id="edit-ann-summary" name="summary" maxlength="300" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="edit-ann-body">Full Content / Body</label>
+              <textarea class="form-textarea" id="edit-ann-body" name="body" rows="5"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="edit-ann-status">Status</label>
+              <select class="form-select" id="edit-ann-status" name="status">
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+
+            <div class="form-error" id="edit-ann-error" hidden></div>
+          </div>
+          <div class="modal__footer">
+            <button class="btn btn--outline btn--sm" type="button" data-modal-close>Cancel</button>
+            <button class="btn btn--ghost-dark btn--sm" type="button" id="btn-preview-edit-ann">Preview</button>
+            <button class="btn btn--orange btn--sm" type="submit" id="btn-submit-edit-ann">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Preview Announcement -->
+    <div class="modal-backdrop" id="modal-preview-announcement" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-preview-ann-title">
+      <div class="modal" style="max-width: 580px;">
+        <div class="modal__header">
+          <h3 class="modal__title" id="modal-preview-ann-title">Announcement Preview</h3>
+          <button class="modal__close" type="button" data-modal-close aria-label="Close modal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="modal__body" id="preview-ann-body-content"></div>
+        <div class="modal__footer">
+          <button class="btn btn--outline btn--sm" type="button" data-modal-close>Close Preview</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Add / Edit Subject -->
+    <div class="modal-backdrop" id="modal-subject" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-subject-title">
+      <div class="modal" style="max-width: 480px;">
+        <div class="modal__header">
+          <h3 class="modal__title" id="modal-subject-title">Subject Taxonomy</h3>
+          <button class="modal__close" type="button" data-modal-close aria-label="Close modal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <form id="form-subject">
+          <input type="hidden" id="subject-id" />
+          <div class="modal__body">
+            <div class="form-group">
+              <label class="form-label" for="subject-name">Subject Name <span class="required">*</span></label>
+              <input type="text" class="form-input" id="subject-name" name="name" required maxlength="100" placeholder="e.g. Data Engineering &amp; Analytics" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="subject-category">Domain Category</label>
+              <input type="text" class="form-input" id="subject-category" name="category" maxlength="100" placeholder="e.g. Information Technology / Administration" />
+            </div>
+            <div class="form-error" id="subject-error" hidden></div>
+          </div>
+          <div class="modal__footer">
+            <button class="btn btn--outline btn--sm" type="button" data-modal-close>Cancel</button>
+            <button class="btn btn--orange btn--sm" type="submit" id="btn-submit-subject">Save Subject</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Confirmation Dialog -->
+    <div class="modal-backdrop" id="modal-confirm" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-confirm-title">
+      <div class="modal" style="max-width: 440px;">
+        <div class="modal__header">
+          <h3 class="modal__title" id="modal-confirm-title">Confirm Action</h3>
+          <button class="modal__close" type="button" data-modal-close aria-label="Close modal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="modal__body">
+          <p id="modal-confirm-message" style="margin: 0; color: var(--text-dark); font-size: 0.9375rem; line-height: 1.5;"></p>
+        </div>
+        <div class="modal__footer">
+          <button class="btn btn--outline btn--sm" type="button" data-modal-close>Cancel</button>
+          <button class="btn btn--reject btn--sm" type="button" id="btn-confirm-action">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
     <script src="../shared/api-config.js"></script>
     <script src="../shared/api.js"></script>

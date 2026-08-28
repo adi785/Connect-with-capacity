@@ -88,7 +88,7 @@ async def _ensure_role_profile(db: AsyncSession, profile: Profile) -> tuple[
         trainee_id = await db.scalar(
             select(TraineeProfile.id).where(TraineeProfile.user_id == profile.id)
         )
-        if trainee_id is None and profile.role == "trainee":
+        if trainee_id is None:
             row = TraineeProfile(user_id=profile.id)
             db.add(row)
             await db.flush()
@@ -98,8 +98,11 @@ async def _ensure_role_profile(db: AsyncSession, profile: Profile) -> tuple[
         trainer_id = await db.scalar(
             select(TrainerProfile.id).where(TrainerProfile.user_id == profile.id)
         )
-        if trainer_id is None and profile.role == "trainer":
-            row = TrainerProfile(user_id=profile.id)
+        if trainer_id is None:
+            row = TrainerProfile(
+                user_id=profile.id,
+                designation="Trainer" if profile.role == "trainer" else "Administrator",
+            )
             db.add(row)
             await db.flush()
             trainer_id = row.id
@@ -115,18 +118,25 @@ async def get_or_create_profile(db: AsyncSession, token: VerifiedToken) -> Profi
     promoted straight to approved admin, otherwise nobody could approve the first user.
     """
     profile = await db.scalar(select(Profile).where(Profile.firebase_uid == token.uid))
-    if profile is not None:
-        return profile
-
     email = (token.email or f"{token.uid}@unknown.local").lower().strip()
     is_bootstrap_admin = email in settings.admin_emails
+
+    initial_role = "admin" if is_bootstrap_admin else token.raw_claims.get("role", "trainee")
+    initial_status = "approved" if (is_bootstrap_admin or token.raw_claims.get("status") == "approved") else "pending"
+
+    if profile is not None:
+        if settings.resolved_auth_mode == "dev" and token.raw_claims.get("role"):
+            profile.role = token.raw_claims["role"]
+            profile.status = token.raw_claims.get("status", "approved")
+            await db.flush()
+        return profile
 
     profile = Profile(
         firebase_uid=token.uid,
         name=(token.name or email.split("@")[0])[:150],
         email=email,
-        role="admin" if is_bootstrap_admin else "trainee",
-        status="approved" if is_bootstrap_admin else "pending",
+        role=initial_role,
+        status=initial_status,
     )
     db.add(profile)
     try:

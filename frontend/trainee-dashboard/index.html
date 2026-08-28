@@ -138,6 +138,21 @@
               </a>
             </li>
             <li>
+              <a class="dash-nav__link" href="#announcements">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  aria-hidden="true"
+                >
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                Announcements
+              </a>
+            </li>
+            <li>
               <a class="dash-nav__link" href="#profile">
                 <svg
                   viewBox="0 0 24 24"
@@ -292,8 +307,21 @@
             <div class="panel__body panel__body--flush" id="certs-body"></div>
           </section>
 
+          <!-- Announcements --------------------------------------------- -->
+          <section class="panel" id="announcements" aria-labelledby="announcements-title" hidden>
+            <div class="panel__head">
+              <div class="panel__titles">
+                <h2 class="panel__title" id="announcements-title">Announcements &amp; News</h2>
+                <p class="panel__sub">
+                  Official notices, training session updates, and platform announcements.
+                </p>
+              </div>
+            </div>
+            <div class="panel__body panel__body--flush" id="announcements-body"></div>
+          </section>
+
           <!-- Profile ------------------------------------------------------ -->
-          <section class="panel" id="profile" aria-labelledby="profile-title">
+          <section class="panel" id="profile" aria-labelledby="profile-title" hidden>
             <div class="panel__head">
               <div class="panel__titles">
                 <h2 class="panel__title" id="profile-title">My profile</h2>

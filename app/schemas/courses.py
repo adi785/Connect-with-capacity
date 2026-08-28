@@ -56,12 +56,12 @@ class CourseResponse(ResponseModel):
 
 class ModuleCreate(APIModel):
     title: str = Field(min_length=1, max_length=200)
-    sequence_no: Optional[int] = Field(default=None, ge=1)
+    sequence_no: Optional[int] = Field(default=None, ge=1, alias="sequenceNo")
 
 
 class ModuleUpdate(APIModel):
     title: Optional[str] = Field(default=None, min_length=1, max_length=200)
-    sequence_no: Optional[int] = Field(default=None, ge=1)
+    sequence_no: Optional[int] = Field(default=None, ge=1, alias="sequenceNo")
 
 
 class ResourceResponse(ResponseModel):

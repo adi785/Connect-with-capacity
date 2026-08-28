@@ -74,13 +74,26 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         )
 
     try:
-        async with engine.connect() as conn:
+        async with engine.begin() as conn:
             await conn.execute(text("select 1"))
-        logger.info("Database connection OK")
+            # Ensure non-destructive schema additions for notifications and trainer_profiles
+            await conn.execute(text("""
+                ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS summary TEXT;
+                ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS category VARCHAR(100);
+                ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'published';
+                ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;
+                ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
+                ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
+
+                ALTER TABLE public.trainer_profiles ADD COLUMN IF NOT EXISTS organization VARCHAR(200);
+                ALTER TABLE public.trainer_profiles ADD COLUMN IF NOT EXISTS phone VARCHAR(50);
+                ALTER TABLE public.trainer_profiles ADD COLUMN IF NOT EXISTS experience_years INT;
+            """))
+        logger.info("Database connection and schema verification OK")
     except Exception as exc:
         # Not fatal: the app still boots so /health can report the fault and the
         # container does not crash-loop while Postgres is coming up.
-        logger.error("Database unreachable at startup: %s", exc)
+        logger.error("Database unreachable or migration warning at startup: %s", exc)
 
     try:
         yield

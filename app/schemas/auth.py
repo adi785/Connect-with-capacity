@@ -177,6 +177,9 @@ class TrainerCompetencyResponse(ResponseModel):
 class TrainerProfileUpdate(APIModel):
     bio: Optional[str] = None
     designation: Optional[str] = Field(default=None, max_length=150)
+    organization: Optional[str] = Field(default=None, max_length=200)
+    phone: Optional[str] = Field(default=None, max_length=50)
+    experience_years: Optional[int] = Field(default=None, ge=0, le=100)
     profile_photo_url: Optional[str] = Field(default=None, max_length=500)
 
 
@@ -185,6 +188,9 @@ class TrainerProfileResponse(ResponseModel):
     user_id: uuid.UUID
     bio: Optional[str] = None
     designation: Optional[str] = None
+    organization: Optional[str] = None
+    phone: Optional[str] = None
+    experience_years: Optional[int] = None
     profile_photo_url: Optional[str] = None
     updated_at: Optional[dt.datetime] = None
     skills: list[SkillResponse] = Field(default_factory=list)

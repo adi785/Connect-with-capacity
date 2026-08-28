@@ -12,6 +12,7 @@ import uuid
 from typing import Any
 
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import Conflict, Forbidden, NotFound
@@ -319,7 +320,15 @@ async def get_trainer_profile(
     if target_id is None:
         raise NotFound("No trainer profile for this account", code="trainer_profile_missing")
 
-    profile = await db.get(TrainerProfile, target_id)
+    query = (
+        select(TrainerProfile)
+        .options(
+            selectinload(TrainerProfile.skills),
+            selectinload(TrainerProfile.competencies),
+        )
+        .where(TrainerProfile.id == target_id)
+    )
+    profile = await db.scalar(query)
     if profile is None:
         raise NotFound("Trainer profile not found", code="trainer_profile_not_found")
     return profile
@@ -330,14 +339,35 @@ async def update_trainer_profile(
 ) -> TrainerProfile:
     if current_user.trainer_profile_id is None:
         raise Conflict("No trainer profile for this account", code="trainer_profile_missing")
-    profile = await db.get(TrainerProfile, current_user.trainer_profile_id)
+
+    query = (
+        select(TrainerProfile)
+        .options(
+            selectinload(TrainerProfile.skills),
+            selectinload(TrainerProfile.competencies),
+        )
+        .where(TrainerProfile.id == current_user.trainer_profile_id)
+    )
+    profile = await db.scalar(query)
     if profile is None:
         raise NotFound("Trainer profile not found", code="trainer_profile_not_found")
 
-    for field in ("bio", "designation", "profile_photo_url"):
+    for field in ("bio", "designation", "organization", "phone", "experience_years", "profile_photo_url"):
         if field in data:
             setattr(profile, field, data[field])
+    now = dt.datetime.now(dt.timezone.utc)
+    profile.updated_at = now
     await db.flush()
+
+    query = (
+        select(TrainerProfile)
+        .options(
+            selectinload(TrainerProfile.skills),
+            selectinload(TrainerProfile.competencies),
+        )
+        .where(TrainerProfile.id == current_user.trainer_profile_id)
+    )
+    profile = await db.scalar(query)
     return profile
 
 
@@ -413,6 +443,9 @@ async def serialize_trainer_profile(
         "user_id": profile.user_id,
         "bio": profile.bio,
         "designation": profile.designation,
+        "organization": profile.organization,
+        "phone": profile.phone,
+        "experience_years": profile.experience_years,
         "profile_photo_url": profile.profile_photo_url,
         "updated_at": profile.updated_at,
         "skills": [serialize_skill(s) for s in profile.skills],

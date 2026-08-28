@@ -26,6 +26,7 @@
     activeCourse: null, // Full course detail with modules[] & resources[]
     competencies: [], // Trainer competencies
     trainees: [], // Trainee participants across courses
+    announcements: [], // Platform announcements & news feed
     stats: null, // Metrics from /dashboard/trainer
     selectedUploadFile: null, // Currently selected file for resource upload
     pendingConfirmAction: null // Callback for modal confirm
@@ -112,7 +113,7 @@
     if (!hash.startsWith("#")) hash = "#" + hash;
 
     // Allowed sections
-    var validSections = ["#overview", "#my-courses", "#course-builder", "#competencies", "#my-trainees", "#profile"];
+    var validSections = ["#overview", "#my-courses", "#course-builder", "#competencies", "#my-trainees", "#announcements", "#profile"];
     if (validSections.indexOf(hash) === -1) {
       hash = "#overview";
     }
@@ -350,9 +351,70 @@
     }
   }
 
+  // 7. Announcements
+  async function loadAnnouncements() {
+    var body = document.getElementById("announcements-body");
+    if (body) Dash.renderLoading(body, "Loading announcements & updates…");
+
+    try {
+      var res = await API.get("notifications?limit=50");
+      var items = (res && res.items) || (Array.isArray(res) ? res : []);
+      state.announcements = items;
+      renderAnnouncements();
+    } catch (err) {
+      console.error("Failed to load announcements:", err);
+      if (body) {
+        Dash.renderError(body, "Could not load announcements: " + (err.message || "Network error"), function () {
+          loadAnnouncements();
+        });
+      }
+    }
+  }
+
   /* ------------------------------------------------------------------------
      Renderers
      ------------------------------------------------------------------------ */
+
+  function renderAnnouncements() {
+    var body = document.getElementById("announcements-body");
+    if (!body) return;
+
+    if (!state.announcements.length) {
+      Dash.renderEmpty(
+        body,
+        "No announcements at this time.",
+        "Official platform notices and trainer schedules will appear here."
+      );
+      return;
+    }
+
+    var html = '<div class="announcement-feed" style="padding:20px; display:flex; flex-direction:column; gap:16px;">';
+    state.announcements.forEach(function (ann) {
+      var categoryTag = ann.category ? '<span class="pill pill--orange" style="font-size:0.75rem;">' + Dash.escape(ann.category) + '</span>' : '';
+      var publishedAt = formatDateTime(ann.published_at || ann.created_at);
+      var publisher = ann.published_by_name ? 'Posted by ' + Dash.escape(ann.published_by_name) : 'Official Notice';
+
+      html += '<article class="announcement-card" style="background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">';
+      html += '  <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; gap:12px;">';
+      html += '    <h3 style="font-size:1.0625rem; font-weight:700; color:var(--primary-blue-dark); margin:0;">' + Dash.escape(ann.title) + '</h3>';
+      html += '    <div>' + categoryTag + '</div>';
+      html += '  </div>';
+      if (ann.summary) {
+        html += '  <p style="font-size:0.875rem; font-weight:600; color:var(--text-dark); margin:0 0 8px 0;">' + Dash.escape(ann.summary) + '</p>';
+      }
+      if (ann.body) {
+        html += '  <p style="font-size:0.875rem; color:var(--text-muted); line-height:1.6; margin:0 0 12px 0;">' + Dash.escape(ann.body) + '</p>';
+      }
+      html += '  <div style="font-size:0.75rem; color:var(--text-muted); display:flex; justify-content:space-between; border-top:1px solid var(--border-light); padding-top:10px;">';
+      html += '    <span>' + publisher + '</span>';
+      html += '    <span>' + Dash.escape(publishedAt) + '</span>';
+      html += '  </div>';
+      html += '</article>';
+    });
+    html += '</div>';
+
+    body.innerHTML = html;
+  }
 
   // 1. Courses List View
   function renderCoursesList() {
@@ -737,8 +799,10 @@
     html += '    <div class="detail"><dt class="detail__label">Email Address</dt><dd class="detail__value">' + Dash.escape(u.email || "—") + '</dd></div>';
     html += '    <div class="detail"><dt class="detail__label">Role</dt><dd class="detail__value"><span class="pill pill--active">Trainer</span></dd></div>';
     html += '    <div class="detail"><dt class="detail__label">Designation</dt><dd class="detail__value">' + Dash.escape(p.designation || "Not specified") + '</dd></div>';
+    html += '    <div class="detail"><dt class="detail__label">Organization</dt><dd class="detail__value">' + Dash.escape(p.organization || "Not specified") + '</dd></div>';
+    html += '    <div class="detail"><dt class="detail__label">Contact Phone</dt><dd class="detail__value">' + Dash.escape(p.phone || "Not provided") + '</dd></div>';
+    html += '    <div class="detail"><dt class="detail__label">Experience</dt><dd class="detail__value">' + (p.experience_years ? p.experience_years + ' Years' : "Not specified") + '</dd></div>';
     html += '    <div class="detail"><dt class="detail__label">Account Status</dt><dd class="detail__value">' + statusPill(u.status) + '</dd></div>';
-    html += '    <div class="detail"><dt class="detail__label">Member Since</dt><dd class="detail__value">' + Dash.escape(formatDateTime(u.created_at)) + '</dd></div>';
     html += '  </dl>';
 
     // Edit Profile Form
@@ -758,8 +822,22 @@
     html += '            <input type="text" class="form-input" id="profile-designation" name="designation" value="' + Dash.escape(p.designation || "") + '" maxlength="150" placeholder="e.g. Senior Technical Instructor / Capacity Specialist" />';
     html += '          </div>';
     html += '        </div>';
+    html += '        <div class="form-row">';
+    html += '          <div class="form-group">';
+    html += '            <label class="form-label" for="profile-organization">Organization / Institution</label>';
+    html += '            <input type="text" class="form-input" id="profile-organization" name="organization" value="' + Dash.escape(p.organization || "") + '" maxlength="200" placeholder="e.g. National Skill Institute / Ministry" />';
+    html += '          </div>';
+    html += '          <div class="form-group">';
+    html += '            <label class="form-label" for="profile-phone">Contact Phone</label>';
+    html += '            <input type="tel" class="form-input" id="profile-phone" name="phone" value="' + Dash.escape(p.phone || "") + '" maxlength="50" placeholder="+91 98765 43210" />';
+    html += '          </div>';
+    html += '          <div class="form-group" style="flex:0 1 140px;">';
+    html += '            <label class="form-label" for="profile-exp">Experience (Yrs)</label>';
+    html += '            <input type="number" class="form-input" id="profile-exp" name="experience_years" min="0" max="80" value="' + (p.experience_years !== undefined && p.experience_years !== null ? p.experience_years : '') + '" placeholder="Years" />';
+    html += '          </div>';
+    html += '        </div>';
     html += '        <div class="form-group">';
-    html += '          <label class="form-label" for="profile-bio">Professional Bio &amp; Expertise</label>';
+    html += '          <label class="form-label" for="profile-bio">Professional Bio &amp; Instructional Expertise</label>';
     html += '          <textarea class="form-textarea" id="profile-bio" name="bio" placeholder="Describe your instructional background, domain experience, and certifications…">' + Dash.escape(p.bio || "") + '</textarea>';
     html += '        </div>';
     html += '        <div class="form-group">';
@@ -1271,6 +1349,9 @@
 
     var nameVal = form.name.value.trim();
     var designationVal = form.designation.value.trim() || null;
+    var organizationVal = form.organization ? form.organization.value.trim() || null : null;
+    var phoneVal = form.phone ? form.phone.value.trim() || null : null;
+    var expVal = form.experience_years && form.experience_years.value ? parseInt(form.experience_years.value, 10) : null;
     var bioVal = form.bio.value.trim() || null;
     var photoVal = form.profile_photo_url.value.trim() || null;
 
@@ -1295,6 +1376,9 @@
       // 2. Update trainer profile
       var updated = await API.patch("profile/trainer", {
         designation: designationVal,
+        organization: organizationVal,
+        phone: phoneVal,
+        experience_years: expVal,
         bio: bioVal,
         profile_photo_url: photoVal
       });
@@ -1722,7 +1806,10 @@
         // 6. Load trainee rosters
         await loadTrainees();
 
-        // 7. Route to active section or default to #overview
+        // 7. Load announcements
+        await loadAnnouncements();
+
+        // 8. Route to active section or default to #overview
         switchSection(window.location.hash || "#overview");
       } catch (err) {
         console.error("Error during trainer workspace initialization:", err);

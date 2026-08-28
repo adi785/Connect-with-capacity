@@ -16,6 +16,7 @@ import uuid
 from typing import Any
 
 from sqlalchemy import Select, func, inspect as sa_inspect, or_, select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -66,7 +67,14 @@ async def get_course(
     A draft course returns 404 rather than 403 for non-owners: its existence is
     itself private until published.
     """
-    course = await db.get(Course, course_id)
+    query = (
+        select(Course)
+        .options(
+            selectinload(Course.modules).selectinload(CourseModule.resources)
+        )
+        .where(Course.id == course_id)
+    )
+    course = await db.scalar(query)
     if course is None:
         raise NotFound("Course not found", code="course_not_found")
 
@@ -321,7 +329,18 @@ async def create_course(
     status: str,
 ) -> Course:
     """Create a course owned by the calling trainer (or, for an admin, by them too)."""
-    if current_user.trainer_profile_id is None:
+    trainer_profile_id = current_user.trainer_profile_id
+    if trainer_profile_id is None and current_user.is_admin:
+        trainer_prof = await db.scalar(
+            select(TrainerProfile).where(TrainerProfile.user_id == current_user.id)
+        )
+        if trainer_prof is None:
+            trainer_prof = TrainerProfile(user_id=current_user.id, designation="Administrator")
+            db.add(trainer_prof)
+            await db.flush()
+        trainer_profile_id = trainer_prof.id
+
+    if trainer_profile_id is None:
         raise Conflict(
             "Only accounts with a trainer profile can create courses",
             code="trainer_profile_missing",
@@ -333,7 +352,7 @@ async def create_course(
         title=title,
         description=description,
         subject_id=subject_id,
-        created_by=current_user.trainer_profile_id,
+        created_by=trainer_profile_id,
         status=status,
     )
     db.add(course)

@@ -42,6 +42,7 @@ ASSESSMENT_STATUSES = ("draft", "published", "closed")
 ATTEMPT_STATUSES = ("in_progress", "submitted", "expired")
 APPROVAL_STATUSES = ("pending", "approved", "rejected")
 NOTIFICATION_TYPES = ("announcement", "achievement", "new_content", "deadline_reminder")
+NOTIFICATION_STATUSES = ("draft", "published", "archived")
 TARGET_ROLES = ("all", "trainee", "trainer", "admin")
 
 
@@ -243,6 +244,9 @@ class TrainerProfile(Base):
     )
     bio: Mapped[str | None] = mapped_column(Text)
     designation: Mapped[str | None] = mapped_column(String(150))
+    organization: Mapped[str | None] = mapped_column(String(200))
+    phone: Mapped[str | None] = mapped_column(String(50))
+    experience_years: Mapped[int | None] = mapped_column(Integer)
     profile_photo_url: Mapped[str | None] = mapped_column(String(500))
     updated_at: Mapped[dt.datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -575,13 +579,23 @@ class Notification(Base):
     id: Mapped[uuid.UUID] = _pk()
     type: Mapped[str] = mapped_column(String(30), nullable=False)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
+    summary: Mapped[str | None] = mapped_column(Text)
     body: Mapped[str | None] = mapped_column(Text)
+    category: Mapped[str | None] = mapped_column(String(100))
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="published")
     published_by: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=False
     )
     target_role: Mapped[str | None] = mapped_column(String(20), default="all")
     published_at: Mapped[dt.datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
+    )
+    expires_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[dt.datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
 

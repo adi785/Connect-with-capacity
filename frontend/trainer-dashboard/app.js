@@ -1888,6 +1888,15 @@
     // Form: Add Question
     var addQForm = document.getElementById("form-add-question");
     if (addQForm) addQForm.addEventListener("submit", handleAddQuestion);
+
+    // Delegated profile & skill form submissions
+    document.addEventListener("submit", function (e) {
+      if (e.target && e.target.id === "form-edit-trainer-profile") {
+        handleSaveProfile(e);
+      } else if (e.target && e.target.id === "form-add-skill") {
+        handleAddSkill(e);
+      }
+    });
   }
 
   /* ------------------------------------------------------------------------
@@ -2118,22 +2127,6 @@
         showToast("Cannot delete assessment: " + (err.message || "May have active attempts."), "error");
       }
     }, "Delete Assessment");
-  }
-      if (delSkillBtn) {
-        var skId = delSkillBtn.getAttribute("data-skill-id");
-        handleDeleteSkill(skId);
-        return;
-      }
-    });
-
-    // Delegated profile & skill form submissions
-    document.addEventListener("submit", function (e) {
-      if (e.target && e.target.id === "form-edit-trainer-profile") {
-        handleSaveProfile(e);
-      } else if (e.target && e.target.id === "form-add-skill") {
-        handleAddSkill(e);
-      }
-    });
   }
 
   /* ------------------------------------------------------------------------

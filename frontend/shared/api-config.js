@@ -7,11 +7,11 @@
 (function (window) {
   "use strict";
 
-  var API_BASE_URL = "https://capacity-connect-three.vercel.app/api/v1";
+  var API_BASE_URL = "http://127.0.0.1:8000/api/v1";
 
   window.CapacityConnectConfig = Object.freeze({
     API_BASE_URL: API_BASE_URL,
-    API_ORIGIN: "https://capacity-connect-three.vercel.app"
+    API_ORIGIN: "http://127.0.0.1:8000"
   });
 
   // Backward-compatible global used by existing dashboard code.

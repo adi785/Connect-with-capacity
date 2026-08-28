@@ -68,10 +68,10 @@
 
     <div class="shell dash-body">
       <nav class="dash-nav" id="dash-nav" aria-label="Dashboard sections">
-        <span class="dash-nav__label">Trainer</span>
+        <span class="dash-nav__label">Trainer Workspace</span>
         <ul class="dash-nav__list">
           <li>
-            <a class="dash-nav__link is-active" href="#overview" aria-current="page">
+            <a class="dash-nav__link is-active" href="#overview" id="nav-link-overview" aria-current="page">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
                 <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
                 <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
@@ -82,7 +82,7 @@
             </a>
           </li>
           <li>
-            <a class="dash-nav__link" href="#my-courses">
+            <a class="dash-nav__link" href="#my-courses" id="nav-link-my-courses">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
                 <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5Z" />
                 <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5A1.5 1.5 0 0 0 20 18.5Z" />
@@ -90,8 +90,25 @@
               My Courses
             </a>
           </li>
+          <li id="nav-item-course-builder" hidden>
+            <a class="dash-nav__link" href="#course-builder" id="nav-link-course-builder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+              Course Builder
+            </a>
+          </li>
           <li>
-            <a class="dash-nav__link" href="#my-trainees">
+            <a class="dash-nav__link" href="#competencies" id="nav-link-competencies">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+              Competency Mapping
+            </a>
+          </li>
+          <li>
+            <a class="dash-nav__link" href="#my-trainees" id="nav-link-my-trainees">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
                 <circle cx="9" cy="8.5" r="3.25" />
                 <path d="M3.5 19.5c0-3.1 2.5-5.2 5.5-5.2s5.5 2.1 5.5 5.2" />
@@ -102,7 +119,7 @@
             </a>
           </li>
           <li>
-            <a class="dash-nav__link" href="#profile">
+            <a class="dash-nav__link" href="#profile" id="nav-link-profile">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
                 <circle cx="12" cy="8" r="3.75" />
                 <path d="M4.5 20c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6" />
@@ -114,27 +131,34 @@
       </nav>
 
       <main class="dash-main" id="main">
+        <!-- Section: Overview -->
         <section class="welcome" id="overview" aria-labelledby="welcome-title">
-          <span class="welcome__eyebrow">Trainer workspace</span>
+          <span class="welcome__eyebrow">Trainer Workspace</span>
           <h1 class="welcome__title" id="welcome-title">
-            Welcome back, <span id="welcome-name">there</span>.
+            Welcome back, <span id="welcome-name">Trainer</span>.
           </h1>
           <p class="welcome__text">
-            Review the courses you deliver, keep an eye on trainee progress and
-            see which programmes are still running.
+            Build and publish course curriculums, organize lecture modules and study materials, declare subject competencies, and track learner progress.
           </p>
           <div class="welcome__actions">
-            <a class="btn btn--orange btn--sm" href="#my-courses">View my courses</a>
+            <button class="btn btn--orange btn--sm" type="button" id="btn-quick-create-course">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              + Create New Course
+            </button>
+            <a class="btn btn--ghost-light btn--sm" href="#competencies">
+              Competency Mapping
+            </a>
             <a class="btn btn--ghost-light btn--sm" href="#my-trainees">
-              View my trainees
+              View Trainees
             </a>
           </div>
         </section>
 
         <div id="data-notice" hidden></div>
 
+        <!-- Stat Cards -->
         <section aria-labelledby="stats-title">
-          <h2 class="sr-only" id="stats-title">Your delivery at a glance</h2>
+          <h2 class="sr-only" id="stats-title">Delivery Metrics</h2>
           <div class="stat-grid">
             <article class="stat-card">
               <span class="icon-tile" aria-hidden="true">
@@ -145,7 +169,20 @@
               </span>
               <span class="stat-card__body">
                 <span class="stat-card__value is-pending" id="stat-courses">—</span>
-                <span class="stat-card__label">Total courses</span>
+                <span class="stat-card__label">Total Courses</span>
+              </span>
+            </article>
+
+            <article class="stat-card">
+              <span class="icon-tile icon-tile--orange" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <circle cx="12" cy="12" r="8.5" />
+                  <path d="M12 7.5V12l3 1.9" />
+                </svg>
+              </span>
+              <span class="stat-card__body">
+                <span class="stat-card__value is-pending" id="stat-active">—</span>
+                <span class="stat-card__label">Published Courses</span>
               </span>
             </article>
 
@@ -160,20 +197,7 @@
               </span>
               <span class="stat-card__body">
                 <span class="stat-card__value is-pending" id="stat-trainees">—</span>
-                <span class="stat-card__label">Total trainees</span>
-              </span>
-            </article>
-
-            <article class="stat-card">
-              <span class="icon-tile icon-tile--orange" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                  <circle cx="12" cy="12" r="8.5" />
-                  <path d="M12 7.5V12l3 1.9" />
-                </svg>
-              </span>
-              <span class="stat-card__body">
-                <span class="stat-card__value is-pending" id="stat-active">—</span>
-                <span class="stat-card__label">Active courses</span>
+                <span class="stat-card__label">Total Trainees</span>
               </span>
             </article>
 
@@ -186,44 +210,108 @@
               </span>
               <span class="stat-card__body">
                 <span class="stat-card__value is-pending" id="stat-completed">—</span>
-                <span class="stat-card__label">Completed trainees</span>
+                <span class="stat-card__label">Completed Trainees</span>
               </span>
             </article>
           </div>
         </section>
 
+        <!-- Section: My Courses -->
         <section class="panel" id="my-courses" aria-labelledby="courses-title">
           <div class="panel__head">
             <div class="panel__titles">
-              <h2 class="panel__title" id="courses-title">My courses</h2>
-              <p class="panel__sub">Programmes assigned to you as trainer.</p>
+              <h2 class="panel__title" id="courses-title">My Courses</h2>
+              <p class="panel__sub">Programmes and courses you authored and deliver.</p>
+            </div>
+            <button class="btn btn--orange btn--sm" type="button" id="btn-open-create-course">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              + Create Course
+            </button>
+          </div>
+
+          <div class="filter-bar">
+            <div class="filter-bar__search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+              <input type="search" class="form-input" id="courses-search" placeholder="Search courses by title or description…" aria-label="Search courses" />
+            </div>
+            <div class="filter-bar__actions">
+              <select class="form-select" id="courses-status-filter" aria-label="Filter courses by status">
+                <option value="">All Statuses</option>
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
             </div>
           </div>
+
           <div class="panel__body panel__body--flush" id="courses-body"></div>
         </section>
 
+        <!-- Section: Course Builder (Manage Active Course) -->
+        <section class="panel builder-view" id="course-builder" aria-labelledby="builder-title" hidden>
+          <div id="builder-body"></div>
+        </section>
+
+        <!-- Section: Competency Mapping -->
+        <section class="panel" id="competencies" aria-labelledby="competencies-title">
+          <div class="panel__head">
+            <div class="panel__titles">
+              <h2 class="panel__title" id="competencies-title">Competency Mapping</h2>
+              <p class="panel__sub">
+                Declare your proficiency in subjects to be matched with training programmes and curriculum delivery.
+              </p>
+            </div>
+            <button class="btn btn--orange btn--sm" type="button" id="btn-open-add-competency">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              + Declare Competency
+            </button>
+          </div>
+          <div class="panel__body panel__body--flush" id="competencies-body"></div>
+        </section>
+
+        <!-- Section: My Trainees -->
         <section class="panel" id="my-trainees" aria-labelledby="trainees-title">
           <div class="panel__head">
             <div class="panel__titles">
-              <h2 class="panel__title" id="trainees-title">My trainees</h2>
+              <h2 class="panel__title" id="trainees-title">My Trainees</h2>
               <p class="panel__sub">
-                Learners enrolled in the courses you deliver.
+                Learners enrolled in the courses you deliver, with their progress and completion status.
               </p>
             </div>
           </div>
+
+          <div class="filter-bar">
+            <div class="filter-bar__actions" style="flex: 1 1 100%;">
+              <select class="form-select" id="trainees-course-filter" aria-label="Select course to view roster" style="flex: 1 1 240px;">
+                <option value="">All My Courses</option>
+              </select>
+              <select class="form-select" id="trainees-status-filter" aria-label="Filter trainees by status" style="flex: 0 1 180px;">
+                <option value="">All Statuses</option>
+                <option value="enrolled">Enrolled</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="dropped">Dropped</option>
+              </select>
+            </div>
+          </div>
+
           <div class="panel__body panel__body--flush" id="trainees-body"></div>
         </section>
 
+        <!-- Section: My Profile -->
         <section class="panel" id="profile" aria-labelledby="profile-title">
           <div class="panel__head">
             <div class="panel__titles">
-              <h2 class="panel__title" id="profile-title">My profile</h2>
+              <h2 class="panel__title" id="profile-title">Trainer Profile &amp; Expertise</h2>
               <p class="panel__sub">
-                Details held on your account record. Contact your administrator
-                to request a change.
+                Manage your professional identity, bio, designation, and skills.
               </p>
             </div>
           </div>
+
           <div class="panel__body" id="profile-body"></div>
         </section>
       </main>
@@ -231,7 +319,7 @@
 
     <footer class="dash-footer">
       <div class="shell dash-footer__inner">
-        <span>© 2026 Capacity Connect</span>
+        <span>© 2026 Capacity Connect · Ministry of Skill Development &amp; Entrepreneurship</span>
         <span>
           <a href="../homepage/index.html">Home</a>
           &nbsp;·&nbsp;
@@ -241,6 +329,324 @@
     </footer>
   </div>
 
+  <!-- =========================================================================
+       MODALS
+       ========================================================================= -->
+
+  <!-- Modal: Create Course -->
+  <div class="modal-backdrop" id="modal-create-course" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-create-course-title">
+    <div class="modal">
+      <div class="modal__header">
+        <h3 class="modal__title" id="modal-create-course-title">Create New Course</h3>
+        <button class="modal__close" type="button" data-modal-close aria-label="Close modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="form-create-course">
+        <div class="modal__body">
+          <div class="form-group">
+            <label class="form-label" for="create-course-title">Course Title <span class="required">*</span></label>
+            <input type="text" class="form-input" id="create-course-title" name="title" required maxlength="200" placeholder="e.g. Modern Data Engineering Fundamentals" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="create-course-subject">Subject Taxonomy</label>
+            <select class="form-select" id="create-course-subject" name="subjectId">
+              <option value="">Select subject…</option>
+            </select>
+            <div class="form-hint">Categorizes your course for relevant trainee recommendations.</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="create-course-desc">Description</label>
+            <textarea class="form-textarea" id="create-course-desc" name="description" placeholder="Summarize learning objectives, prerequisites, and expected outcomes…"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="create-course-status">Initial Status</label>
+            <select class="form-select" id="create-course-status" name="status">
+              <option value="draft" selected>Draft (Edit &amp; prepare curriculum before releasing)</option>
+              <option value="published">Published (Make available to learners immediately)</option>
+            </select>
+          </div>
+          <div class="form-error" id="create-course-error" hidden></div>
+        </div>
+        <div class="modal__footer">
+          <button class="btn btn--outline btn--sm" type="button" data-modal-close>Cancel</button>
+          <button class="btn btn--orange btn--sm" type="submit" id="btn-submit-create-course">
+            Create &amp; Open Builder
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Course Metadata -->
+  <div class="modal-backdrop" id="modal-edit-course" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-edit-course-title">
+    <div class="modal">
+      <div class="modal__header">
+        <h3 class="modal__title" id="modal-edit-course-title">Edit Course Information</h3>
+        <button class="modal__close" type="button" data-modal-close aria-label="Close modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="form-edit-course">
+        <input type="hidden" id="edit-course-id" name="id" />
+        <div class="modal__body">
+          <div class="form-group">
+            <label class="form-label" for="edit-course-title">Course Title <span class="required">*</span></label>
+            <input type="text" class="form-input" id="edit-course-title" name="title" required maxlength="200" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="edit-course-subject">Subject Taxonomy</label>
+            <select class="form-select" id="edit-course-subject" name="subjectId">
+              <option value="">Select subject…</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="edit-course-desc">Description</label>
+            <textarea class="form-textarea" id="edit-course-desc" name="description"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="edit-course-status">Status</label>
+            <select class="form-select" id="edit-course-status" name="status">
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+          <div class="form-error" id="edit-course-error" hidden></div>
+        </div>
+        <div class="modal__footer">
+          <button class="btn btn--outline btn--sm" type="button" data-modal-close>Cancel</button>
+          <button class="btn btn--orange btn--sm" type="submit" id="btn-submit-edit-course">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Module -->
+  <div class="modal-backdrop" id="modal-add-module" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-add-module-title">
+    <div class="modal">
+      <div class="modal__header">
+        <h3 class="modal__title" id="modal-add-module-title">Add Course Module</h3>
+        <button class="modal__close" type="button" data-modal-close aria-label="Close modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="form-add-module">
+        <input type="hidden" id="add-module-course-id" />
+        <div class="modal__body">
+          <div class="form-group">
+            <label class="form-label" for="add-module-title">Module Title <span class="required">*</span></label>
+            <input type="text" class="form-input" id="add-module-title" name="title" required maxlength="200" placeholder="e.g. Unit 1: Principles and Foundations" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="add-module-seq">Sequence Number</label>
+            <input type="number" class="form-input" id="add-module-seq" name="sequence_no" min="1" max="100" />
+            <div class="form-hint">Controls module ordering in the curriculum.</div>
+          </div>
+          <div class="form-error" id="add-module-error" hidden></div>
+        </div>
+        <div class="modal__footer">
+          <button class="btn btn--outline btn--sm" type="button" data-modal-close>Cancel</button>
+          <button class="btn btn--orange btn--sm" type="submit" id="btn-submit-add-module">
+            Add Module
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Module -->
+  <div class="modal-backdrop" id="modal-edit-module" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-edit-module-title">
+    <div class="modal">
+      <div class="modal__header">
+        <h3 class="modal__title" id="modal-edit-module-title">Edit Module</h3>
+        <button class="modal__close" type="button" data-modal-close aria-label="Close modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="form-edit-module">
+        <input type="hidden" id="edit-module-id" />
+        <div class="modal__body">
+          <div class="form-group">
+            <label class="form-label" for="edit-module-title">Module Title <span class="required">*</span></label>
+            <input type="text" class="form-input" id="edit-module-title" name="title" required maxlength="200" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="edit-module-seq">Sequence Number</label>
+            <input type="number" class="form-input" id="edit-module-seq" name="sequence_no" min="1" max="100" />
+          </div>
+          <div class="form-error" id="edit-module-error" hidden></div>
+        </div>
+        <div class="modal__footer">
+          <button class="btn btn--outline btn--sm" type="button" data-modal-close>Cancel</button>
+          <button class="btn btn--orange btn--sm" type="submit" id="btn-submit-edit-module">
+            Save Module
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Resource (Upload / Link) -->
+  <div class="modal-backdrop" id="modal-add-resource" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-add-resource-title">
+    <div class="modal modal--lg">
+      <div class="modal__header">
+        <h3 class="modal__title" id="modal-add-resource-title">Add Learning Resource</h3>
+        <button class="modal__close" type="button" data-modal-close aria-label="Close modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal__body">
+        <input type="hidden" id="add-resource-module-id" />
+        
+        <div class="subtabs" style="margin-bottom: 20px;" role="tablist">
+          <button class="subtab" type="button" role="tab" id="tab-btn-upload" aria-selected="true">Upload File</button>
+          <button class="subtab" type="button" role="tab" id="tab-btn-link" aria-selected="false">External Link</button>
+        </div>
+
+        <!-- Subtab 1: File Upload Form -->
+        <form id="form-upload-resource">
+          <div class="form-group">
+            <label class="form-label" for="upload-resource-title">Resource Title <span class="required">*</span></label>
+            <input type="text" class="form-input" id="upload-resource-title" name="title" required maxlength="200" placeholder="e.g. Session 1 Lecture Video / Lecture Slides" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="upload-resource-type">Resource Type <span class="required">*</span></label>
+            <select class="form-select" id="upload-resource-type" name="type" required>
+              <option value="document">Document (PDF, DOCX, TXT, MD, XLSX)</option>
+              <option value="presentation">Presentation (PPTX, PPT, PDF)</option>
+              <option value="lecture_video">Lecture Video (MP4, WEBM, MKV, MOV)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Select File <span class="required">*</span></label>
+            <div class="upload-dropzone" id="resource-dropzone">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <div class="upload-dropzone__title" id="dropzone-label">Click to browse or drag file here</div>
+              <div class="upload-dropzone__hint" id="dropzone-hint">Supports video, documents and slide decks</div>
+              <input type="file" id="upload-file-input" style="display: none;" />
+            </div>
+          </div>
+
+          <div id="upload-progress-container" hidden style="margin-top: 14px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8125rem; margin-bottom: 6px;">
+              <span id="upload-progress-status">Uploading file…</span>
+              <span id="upload-progress-percent">0%</span>
+            </div>
+            <div class="progress"><span class="progress__fill" id="upload-progress-bar" style="width: 0%;"></span></div>
+          </div>
+
+          <div class="form-error" id="upload-resource-error" hidden></div>
+
+          <div class="modal__footer" style="padding-inline: 0; padding-bottom: 0; margin-top: 20px;">
+            <button class="btn btn--outline btn--sm" type="button" data-modal-close>Cancel</button>
+            <button class="btn btn--orange btn--sm" type="submit" id="btn-submit-upload-resource">
+              Upload Resource
+            </button>
+          </div>
+        </form>
+
+        <!-- Subtab 2: Link Form -->
+        <form id="form-link-resource" hidden>
+          <div class="form-group">
+            <label class="form-label" for="link-resource-title">Link Title <span class="required">*</span></label>
+            <input type="text" class="form-input" id="link-resource-title" name="title" required maxlength="200" placeholder="e.g. Official Documentation / Reference Guide" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="link-resource-url">URL <span class="required">*</span></label>
+            <input type="url" class="form-input" id="link-resource-url" name="url" required maxlength="500" placeholder="https://example.gov.in/docs" />
+          </div>
+
+          <div class="form-error" id="link-resource-error" hidden></div>
+
+          <div class="modal__footer" style="padding-inline: 0; padding-bottom: 0; margin-top: 20px;">
+            <button class="btn btn--outline btn--sm" type="button" data-modal-close>Cancel</button>
+            <button class="btn btn--orange btn--sm" type="submit" id="btn-submit-link-resource">
+              Add Link
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Declare Competency -->
+  <div class="modal-backdrop" id="modal-declare-competency" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-declare-competency-title">
+    <div class="modal">
+      <div class="modal__header">
+        <h3 class="modal__title" id="modal-declare-competency-title">Self-Declare Subject Competency</h3>
+        <button class="modal__close" type="button" data-modal-close aria-label="Close modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="form-declare-competency">
+        <div class="modal__body">
+          <div class="form-group">
+            <label class="form-label" for="declare-competency-subject">Subject Taxonomy <span class="required">*</span></label>
+            <select class="form-select" id="declare-competency-subject" name="subjectId" required>
+              <option value="">Select subject…</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="declare-competency-score">
+              Proficiency Score (0 to 10 scale) <span class="required">*</span>: <span id="score-display" style="font-weight: 800; color: var(--accent-orange-dark);">8.0 / 10</span>
+            </label>
+            <input type="range" class="form-input" id="declare-competency-score" name="proficiency_score" min="1" max="10" step="0.5" value="8" style="padding: 4px;" />
+            <div class="form-hint">Reflects your mastery and readiness to instruct learners in this domain.</div>
+          </div>
+          <div class="form-error" id="declare-competency-error" hidden></div>
+        </div>
+        <div class="modal__footer">
+          <button class="btn btn--outline btn--sm" type="button" data-modal-close>Cancel</button>
+          <button class="btn btn--orange btn--sm" type="submit" id="btn-submit-declare-competency">
+            Save Competency
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Confirmation Dialog -->
+  <div class="modal-backdrop" id="modal-confirm" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-confirm-title">
+    <div class="modal" style="max-width: 440px;">
+      <div class="modal__header">
+        <h3 class="modal__title" id="modal-confirm-title">Confirm Action</h3>
+        <button class="modal__close" type="button" data-modal-close aria-label="Close modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal__body">
+        <p id="modal-confirm-message" style="margin: 0; color: var(--text-dark); font-size: 0.9375rem; line-height: 1.5;"></p>
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--outline btn--sm" type="button" data-modal-close>Cancel</button>
+        <button class="btn btn--reject btn--sm" type="button" id="btn-confirm-action">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Scripts -->
   <script src="../shared/api-config.js"></script>
   <script src="../shared/api.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

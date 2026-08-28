@@ -15,26 +15,27 @@
     return baseUrl + (path ? "/" + String(path).replace(/^\/+/, "") : "");
   }
 
-  function getToken() {
+  async function getToken() {
     try {
-      var token = localStorage.getItem("cc_auth_token");
-      if (token) return token;
+      if (window.supabaseClient) {
+        const { data, error } =
+          await window.supabaseClient.auth.getSession();
 
-      var raw = localStorage.getItem("cc_dev_session");
-      if (raw) {
-        var parsed = JSON.parse(raw);
-        if (parsed && parsed.session && parsed.session.access_token) {
-          return parsed.session.access_token;
+        if (!error && data && data.session) {
+          return data.session.access_token;
         }
       }
-    } catch (_) {}
+    } catch (error) {
+      console.error("Unable to get Supabase session:", error);
+    }
+
     return null;
   }
 
   async function request(path, options) {
     options = options || {};
     var headers = Object.assign({ "Accept": "application/json" }, options.headers || {});
-    var token = getToken();
+    var token = await getToken();
 
     if (token && !headers.Authorization) {
       headers.Authorization = "Bearer " + token;

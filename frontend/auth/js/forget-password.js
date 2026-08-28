@@ -1,36 +1,211 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const request = document.getElementById('reset-request');
-  const verification = document.getElementById('reset-verify');
-  const passwordReset = document.getElementById('reset-password');
-  const complete = document.getElementById('reset-complete');
+document.addEventListener("DOMContentLoaded", () => {
+
+  const request = document.getElementById("reset-request");
+  const passwordReset = document.getElementById("reset-password");
+  const complete = document.getElementById("reset-complete");
+
 
   function show(panel) {
-    [request, verification, passwordReset, complete].forEach((item) => { item.hidden = item !== panel; });
+
+    [request, passwordReset, complete]
+      .forEach((item) => {
+
+        if (item) {
+          item.hidden = item !== panel;
+        }
+
+      });
   }
 
-  document.querySelectorAll('.otp-input').forEach((input, index, inputs) => {
-    input.inputMode = 'numeric';
-    input.addEventListener('input', () => { input.value = input.value.replace(/\D/g, '').slice(0, 1); if (input.value && inputs[index + 1]) inputs[index + 1].focus(); });
-    input.addEventListener('keydown', (event) => { if (event.key === 'Backspace' && !input.value && inputs[index - 1]) inputs[index - 1].focus(); });
-  });
 
-  document.getElementById('forgot-form').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const identifier = document.getElementById('recovery-id');
-    if (!Validation.required(identifier)) return;
-    try { await Auth.forgotPassword(identifier.value); show(verification); } catch (error) { Validation.toast(error.message); }
-  });
+  /* ------------------------------------------------------------------------
+     REQUEST PASSWORD RESET
+     ------------------------------------------------------------------------ */
 
-  document.getElementById('verify-code').addEventListener('click', async () => {
-    const error = document.getElementById('verification-error');
-    try { await Auth.verifyOtp(Validation.otpValue(verification)); show(passwordReset); } catch (exception) { error.textContent = exception.message; }
-  });
+  const forgotForm =
+    document.getElementById("forgot-form");
 
-  document.getElementById('new-password-form').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const password = document.getElementById('new-password').value;
-    const confirmation = document.getElementById('confirm-password').value;
-    const error = document.getElementById('password-error');
-    try { await Auth.resetPassword(password, confirmation); show(complete); } catch (exception) { error.textContent = exception.message; }
-  });
+
+  if (forgotForm) {
+
+    forgotForm.addEventListener(
+      "submit",
+      async (event) => {
+
+        event.preventDefault();
+
+
+        const identifier =
+          document.getElementById("recovery-id");
+
+
+        if (
+          typeof Validation !== "undefined" &&
+          !Validation.required(identifier)
+        ) {
+          return;
+        }
+
+
+        try {
+
+          await Auth.forgotPassword(
+            identifier.value
+          );
+
+
+          /*
+           * Do NOT show OTP.
+           *
+           * Supabase has sent an email.
+           */
+
+          alert(
+            "Password reset email sent. Please check your email and click the Reset password link."
+          );
+
+
+        } catch (error) {
+
+          if (
+            typeof Validation !== "undefined"
+          ) {
+
+            Validation.toast(
+              error.message
+            );
+
+          } else {
+
+            alert(
+              error.message
+            );
+          }
+        }
+
+      }
+    );
+  }
+
+
+  /* ------------------------------------------------------------------------
+     NEW PASSWORD
+     ------------------------------------------------------------------------ */
+
+  const newPasswordForm =
+    document.getElementById(
+      "new-password-form"
+    );
+
+
+  if (newPasswordForm) {
+
+    newPasswordForm.addEventListener(
+      "submit",
+      async (event) => {
+
+        event.preventDefault();
+
+
+        const password =
+          document.getElementById(
+            "new-password"
+          ).value;
+
+
+        const confirmation =
+          document.getElementById(
+            "confirm-password"
+          ).value;
+
+
+        const errorElement =
+          document.getElementById(
+            "password-error"
+          );
+
+
+        try {
+
+          await Auth.resetPassword(
+            password,
+            confirmation
+          );
+
+
+          show(complete);
+
+
+        } catch (error) {
+
+          if (errorElement) {
+            errorElement.textContent =
+              error.message;
+          } else {
+            alert(error.message);
+          }
+
+        }
+
+      }
+    );
+  }
+
+
+  /* ------------------------------------------------------------------------
+     CHECK WHETHER THIS PAGE WAS OPENED FROM SUPABASE RESET LINK
+     ------------------------------------------------------------------------ */
+
+  async function initializeResetPage() {
+
+    /*
+     * Supabase processes the recovery URL
+     * and creates the session automatically.
+     */
+
+    if (
+      window.location.pathname.includes(
+        "reset-password"
+      )
+    ) {
+
+      /*
+       * Give Supabase a moment to process
+       * the recovery URL.
+       */
+
+      setTimeout(
+        async () => {
+
+          const hasSession =
+            await Auth.hasRecoverySession();
+
+
+          if (hasSession) {
+
+            show(passwordReset);
+
+          } else {
+
+            const errorElement =
+              document.getElementById(
+                "password-error"
+              );
+
+            if (errorElement) {
+
+              errorElement.textContent =
+                "Auth session missing. Please open the password reset link from your email again.";
+            }
+          }
+
+        },
+        500
+      );
+    }
+  }
+
+
+  initializeResetPage();
+
 });

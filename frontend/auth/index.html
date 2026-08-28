@@ -1,120 +1,130 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Sign in | Capacity Connect</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/login.css">
-  </head>
-  <body>
-    <div class="national-strip" aria-hidden="true">
-      <span></span><span></span><span></span>
-    </div>
 
-    <header class="site-header">
-      <a class="identity" href="index.html" aria-label="Capacity Connect home">
-        <span class="identity__mark" aria-hidden="true">CC</span>
-        <span class="identity__text">
-          <strong>CAPACITY CONNECT</strong>
-          <small>Learning &amp; Capacity Portal</small>
-        </span>
-      </a>
-      <nav class="language" aria-label="Select language">
-        <a href="index.html" aria-current="page">English</a>
-        <span aria-hidden="true">|</span>
-        <a href="login-hi.html" lang="hi">हिंदी</a>
-      </nav>
-    </header>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in | Capacity Connect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="css/login.css">
+</head>
 
-    <main>
-      <section class="auth-card" aria-labelledby="sign-in-heading">
-        <div id="login-panel">
-          <div class="auth-card__heading">
-            <p class="portal-name">CAPACITY CONNECT</p>
-            <p class="portal-type">Learning &amp; Capacity Portal</p>
-            <h1 id="sign-in-heading">Sign in to continue</h1>
-            <p class="intro-copy">Access your learning, training and capacity-building services.</p>
-          </div>
+<body>
+  <div class="national-strip" aria-hidden="true">
+    <span></span><span></span><span></span>
+  </div>
 
-          <div class="role-tabs" role="tablist" aria-label="Select account type">
-            <button class="role-tab is-selected" data-role="trainee" type="button" role="tab" aria-selected="true">Trainee</button>
-            <button class="role-tab" data-role="trainer" type="button" role="tab" aria-selected="false">Trainer</button>
-            <button class="role-tab" data-role="admin" type="button" role="tab" aria-selected="false">Admin</button>
-          </div>
+  <header class="site-header">
+    <a class="identity" href="index.html" aria-label="Capacity Connect home">
+      <span class="identity__mark" aria-hidden="true">CC</span>
+      <span class="identity__text">
+        <strong>CAPACITY CONNECT</strong>
+        <small>Learning &amp; Capacity Portal</small>
+      </span>
+    </a>
+    <nav class="language" aria-label="Select language">
+      <a href="index.html" aria-current="page">English</a>
+      <span aria-hidden="true">|</span>
+      <a href="login-hi.html" lang="hi">हिंदी</a>
+    </nav>
+  </header>
 
-          <form id="login-form" novalidate>
-            <h2 id="form-title">Trainee Login</h2>
-
-            <div class="field">
-              <label id="identifier-label" for="identifier">Email / Employee ID</label>
-              <input id="identifier" type="text" autocomplete="username">
-              <p class="field-error" data-error-for="identifier"></p>
-            </div>
-
-            <div class="field">
-              <label for="password">Password</label>
-              <div class="password-control">
-                <input id="password" type="password" autocomplete="current-password">
-                <button id="toggle-password" type="button" aria-label="Show password" aria-pressed="false">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                    <path d="M2.5 12s3.3-5.5 9.5-5.5S21.5 12 21.5 12s-3.3 5.5-9.5 5.5S2.5 12 2.5 12Z"></path>
-                    <circle cx="12" cy="12" r="2.75"></circle>
-                  </svg>
-                  <span>Show</span>
-                </button>
-              </div>
-              <p class="field-error" data-error-for="password"></p>
-            </div>
-
-            <div class="form-actions">
-              <label class="remember" id="remember-wrap"><input id="remember" type="checkbox"> <span>Remember me</span></label>
-              <a href="forget-password.html">Forgot password?</a>
-            </div>
-
-            <button id="login-btn" class="submit-button" type="submit">Sign In</button>
-            <p class="account-note" id="role-note">New trainee? <a href="create-account.html">Create an account</a></p>
-          </form>
+  <main>
+    <section class="auth-card" aria-labelledby="sign-in-heading">
+      <div id="login-panel">
+        <div class="auth-card__heading">
+          <p class="portal-name">CAPACITY CONNECT</p>
+          <p class="portal-type">Learning &amp; Capacity Portal</p>
+          <h1 id="sign-in-heading">Sign in to continue</h1>
+          <p class="intro-copy">Access your learning, training and capacity-building services.</p>
         </div>
 
-        <section id="admin-2fa" class="two-factor" hidden aria-labelledby="two-factor-heading">
-          <p class="portal-name">CAPACITY CONNECT</p>
-          <h1 id="two-factor-heading">Two-Factor Authentication</h1>
-          <p>Enter the verification code generated by your authenticator.</p>
-          <div class="otp-fields" aria-label="Verification code">
-            <input class="otp-input" aria-label="Digit 1" maxlength="1">
-            <input class="otp-input" aria-label="Digit 2" maxlength="1">
-            <input class="otp-input" aria-label="Digit 3" maxlength="1">
-            <input class="otp-input" aria-label="Digit 4" maxlength="1">
-            <input class="otp-input" aria-label="Digit 5" maxlength="1">
-            <input class="otp-input" aria-label="Digit 6" maxlength="1">
+        <div class="role-tabs" role="tablist" aria-label="Select account type">
+          <button class="role-tab is-selected" data-role="trainee" type="button" role="tab"
+            aria-selected="true">Trainee</button>
+          <button class="role-tab" data-role="trainer" type="button" role="tab" aria-selected="false">Trainer</button>
+          <button class="role-tab" data-role="admin" type="button" role="tab" aria-selected="false">Admin</button>
+        </div>
+
+        <form id="login-form" novalidate>
+          <h2 id="form-title">Trainee Login</h2>
+
+          <div class="field">
+            <label id="identifier-label" for="identifier">Email / Employee ID</label>
+            <input id="identifier" type="text" autocomplete="username">
+            <p class="field-error" data-error-for="identifier"></p>
           </div>
-          <p class="field-error" id="otp-error"></p>
-          <button id="verify-admin" class="submit-button" type="button">Verify</button>
-          <button class="alternate-method" type="button">Use another verification method</button>
-        </section>
 
-        <p class="security-note">
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 2.75 19 5.5v5.1c0 4.5-2.9 8.6-7 10.65-4.1-2.05-7-6.15-7-10.65V5.5l7-2.75Z"></path><path d="m9.5 12.1 1.7 1.9 3.5-4"></path></svg>
-          <span>Your information is protected and access is restricted to authorized users.</span>
-        </p>
+          <div class="field">
+            <label for="password">Password</label>
+            <div class="password-control">
+              <input id="password" type="password" autocomplete="current-password">
+              <button id="toggle-password" type="button" aria-label="Show password" aria-pressed="false">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <path d="M2.5 12s3.3-5.5 9.5-5.5S21.5 12 21.5 12s-3.3 5.5-9.5 5.5S2.5 12 2.5 12Z"></path>
+                  <circle cx="12" cy="12" r="2.75"></circle>
+                </svg>
+                <span>Show</span>
+              </button>
+            </div>
+            <p class="field-error" data-error-for="password"></p>
+          </div>
+
+          <div class="form-actions">
+            <label class="remember" id="remember-wrap"><input id="remember" type="checkbox"> <span>Remember
+                me</span></label>
+            <a href="forget-password.html">Forgot password?</a>
+          </div>
+
+          <button id="login-btn" class="submit-button" type="submit">Sign In</button>
+          <p class="account-note" id="role-note">New trainee? <a href="create-account.html">Create an account</a></p>
+        </form>
+      </div>
+
+      <section id="admin-2fa" class="two-factor" hidden aria-labelledby="two-factor-heading">
+        <p class="portal-name">CAPACITY CONNECT</p>
+        <h1 id="two-factor-heading">Two-Factor Authentication</h1>
+        <p>Enter the verification code generated by your authenticator.</p>
+        <div class="otp-fields" aria-label="Verification code">
+          <input class="otp-input" aria-label="Digit 1" maxlength="1">
+          <input class="otp-input" aria-label="Digit 2" maxlength="1">
+          <input class="otp-input" aria-label="Digit 3" maxlength="1">
+          <input class="otp-input" aria-label="Digit 4" maxlength="1">
+          <input class="otp-input" aria-label="Digit 5" maxlength="1">
+          <input class="otp-input" aria-label="Digit 6" maxlength="1">
+        </div>
+        <p class="field-error" id="otp-error"></p>
+        <button id="verify-admin" class="submit-button" type="button">Verify</button>
+        <button class="alternate-method" type="button">Use another verification method</button>
       </section>
-    </main>
 
-    <footer>
-      <span>© 2026 Capacity Connect</span>
-      <span><a href="#">Accessibility</a><i aria-hidden="true">|</i><a href="#">Help</a></span>
-    </footer>
+      <p class="security-note">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M12 2.75 19 5.5v5.1c0 4.5-2.9 8.6-7 10.65-4.1-2.05-7-6.15-7-10.65V5.5l7-2.75Z"></path>
+          <path d="m9.5 12.1 1.7 1.9 3.5-4"></path>
+        </svg>
+        <span>Your information is protected and access is restricted to authorized users.</span>
+      </p>
+    </section>
+  </main>
 
-    <script src="../shared/api-config.js"></script>
-    <script src="../shared/api.js"></script>
-    <script src="js/mock-data.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/validation.js"></script>
-    <script src="js/login.js"></script>
-  </body>
+  <footer>
+    <span>© 2026 Capacity Connect</span>
+    <span><a href="#">Accessibility</a><i aria-hidden="true">|</i><a href="#">Help</a></span>
+  </footer>
+
+  <script src="../shared/api-config.js"></script>
+  <script src="../shared/api.js"></script>
+  <script src="js/mock-data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/validation.js"></script>
+  <script src="js/login.js"></script>
+</body>
+
 </html>

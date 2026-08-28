@@ -172,8 +172,8 @@
     if (!requests.length) {
       Dash.renderEmpty(
         target,
-        "No pending approval requests",
-        "All trainer and user registrations have been reviewed. New applications requiring approval will appear here."
+        "No pending trainer applications",
+        "All trainer applications have been reviewed. New trainer registrations requiring approval will appear here."
       );
       return;
     }
@@ -191,99 +191,219 @@
 
     for (var i = 0; i < requests.length; i++) {
       var req = requests[i];
-      var roleBadgeClass = req.role === "trainer" ? "role-badge--trainer" : "";
-      var reqId = req.id;
 
       html +=
-        '<tr id="row-appr-' + Dash.escape(reqId) + '">' +
+        '<tr id="row-appr-' + Dash.escape(req.user_id) + '">' +
+
         '<td class="cell-strong">' +
-        (req.name ? Dash.escape(req.name) : '<span class="cell-muted">Applicant</span>') +
+        (req.name
+          ? Dash.escape(req.name)
+          : '<span class="cell-muted">Applicant</span>') +
         "</td>" +
-        "<td>" + (req.email ? Dash.escape(req.email) : '<span class="cell-muted">—</span>') + "</td>" +
-        "<td>" + (req.employee_id ? Dash.escape(req.employee_id) : '<span class="cell-muted">—</span>') + "</td>" +
+
         "<td>" +
-        '<span class="role-badge ' + roleBadgeClass + '">' + Dash.escape(Dash.titleCase(req.role || "trainer")) + "</span>" +
+        (req.email
+          ? Dash.escape(req.email)
+          : '<span class="cell-muted">—</span>') +
         "</td>" +
-        "<td>" + statusPill(req.status || "pending") + "</td>" +
+
+        "<td>" +
+        (req.employee_id
+          ? Dash.escape(req.employee_id)
+          : '<span class="cell-muted">—</span>') +
+        "</td>" +
+
+        "<td>" +
+        '<span class="role-badge role-badge--trainer">Trainer</span>' +
+        "</td>" +
+
+        "<td>" +
+        statusPill("pending") +
+        "</td>" +
+
         "<td>" +
         '<div class="action-cell">' +
-        '<button class="btn btn--sm btn--approve" type="button" data-action="approve" data-user-id="' + Dash.escape(reqId) + '">✓ Approve</button>' +
-        '<button class="btn btn--sm btn--reject" type="button" data-action="reject" data-user-id="' + Dash.escape(reqId) + '">✕ Reject</button>' +
+
+        '<button class="btn btn--sm btn--approve" ' +
+        'type="button" ' +
+        'data-action="approve" ' +
+        'data-user-id="' + Dash.escape(req.user_id) + '">' +
+        '✓ Approve' +
+        "</button>" +
+
+        '<button class="btn btn--sm btn--reject" ' +
+        'type="button" ' +
+        'data-action="reject" ' +
+        'data-user-id="' + Dash.escape(req.user_id) + '">' +
+        '✕ Reject' +
+        "</button>" +
+
         "</div>" +
         "</td>" +
+
         "</tr>";
     }
 
     html += "</tbody></table></div>";
     target.innerHTML = html;
 
-    // Attach click listeners to approve / reject buttons
     target.querySelectorAll("button[data-action]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var action = this.getAttribute("data-action");
         var userId = this.getAttribute("data-user-id");
-        decideApproval(userId, action, currentUserId, this);
+
+        decideApproval(
+          userId,
+          action,
+          currentUserId,
+          this
+        );
       });
     });
   }
-
-  async function decideApproval(userId, decision, currentUserId, buttonEl) {
-    if (buttonEl) {
-      buttonEl.disabled = true;
-      buttonEl.textContent = decision === "approve" ? "Approving..." : "Rejecting...";
+  async function decideApproval(
+    userId,
+    decision,
+    currentUserId,
+    buttonEl
+  ) {
+    if (!userId) {
+      alert("Invalid trainer account.");
+      return;
     }
 
-    var newStatus = decision === "approve" ? "approved" : "rejected";
+    if (
+      decision !== "approve" &&
+      decision !== "reject"
+    ) {
+      return;
+    }
+
+    var actionText =
+      decision === "approve"
+        ? "Approving..."
+        : "Rejecting...";
+
+    if (buttonEl) {
+      buttonEl.disabled = true;
+      buttonEl.textContent = actionText;
+    }
+
+    var newStatus =
+      decision === "approve"
+        ? "approved"
+        : "rejected";
+
     var client = window.supabaseClient;
 
+    if (!client) {
+      alert("Supabase is not configured.");
+
+      if (buttonEl) {
+        buttonEl.disabled = false;
+        buttonEl.textContent =
+          decision === "approve"
+            ? "✓ Approve"
+            : "✕ Reject";
+      }
+
+      return;
+    }
+
     try {
-      if (client) {
-        // 1. Update public.profiles
-        await client.from("profiles").update({
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        }).eq("id", userId);
 
-        // 2. Update public.approval_requests
-        await client.from("approval_requests").update({
-          status: newStatus,
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: currentUserId
-        }).eq("user_id", userId);
+      /*
+       * 1. Update trainer profile status.
+       */
+      var profileUpdate =
+        await client
+          .from("profiles")
+          .update({
+            status: newStatus,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", userId)
+          .eq("role", "trainer");
 
-        // 3. If approved trainer, ensure trainer_profiles exists
-        if (decision === "approve") {
-          await client.from("trainer_profiles").upsert({
-            user_id: userId,
-            designation: "Trainer"
-          }, { onConflict: "user_id" });
+      if (profileUpdate.error) {
+        throw profileUpdate.error;
+      }
+
+      /*
+       * 2. Update approval request.
+       */
+      var approvalUpdate =
+        await client
+          .from("approval_requests")
+          .update({
+            status: newStatus,
+            reviewed_at: new Date().toISOString(),
+            reviewed_by: currentUserId
+          })
+          .eq("user_id", userId)
+          .eq("requested_role", "trainer")
+          .eq("status", "pending");
+
+      if (approvalUpdate.error) {
+        throw approvalUpdate.error;
+      }
+
+      /*
+       * 3. Make sure approved trainer has
+       *    a trainer_profiles record.
+       */
+      if (decision === "approve") {
+
+        var trainerProfile =
+          await client
+            .from("trainer_profiles")
+            .upsert(
+              {
+                user_id: userId,
+                designation: "Trainer"
+              },
+              {
+                onConflict: "user_id"
+              }
+            );
+
+        if (trainerProfile.error) {
+          throw trainerProfile.error;
         }
       }
 
-      // Also call backend API if reachable
-      try {
-        if (window.CapacityConnectAPI) {
-          window.CapacityConnectAPI.post(
-            "/admin/approvals/" + userId + "/decision",
-            { decision: newStatus }
-          ).catch(function (apiErr) {
-            console.warn("Backend approval sync failed:", apiErr);
-          });
-        }
-      } catch (e) {}
-
-      // Refresh approvals list and users list
+      /*
+       * 4. Refresh dashboard.
+       */
       await Promise.all([
         loadApprovals(currentUserId),
         loadUsers(currentUserId)
       ]);
 
-    } catch (err) {
-      console.error("Decision error:", err);
-      alert("Failed to update status: " + (err.message || err));
+      alert(
+        decision === "approve"
+          ? "Trainer approved successfully."
+          : "Trainer application rejected."
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Trainer approval failed:",
+        error
+      );
+
+      alert(
+        "Failed to update trainer status: " +
+        (error.message || error)
+      );
+
       if (buttonEl) {
         buttonEl.disabled = false;
-        buttonEl.textContent = decision === "approve" ? "✓ Approve" : "✕ Reject";
+        buttonEl.textContent =
+          decision === "approve"
+            ? "✓ Approve"
+            : "✕ Reject";
       }
     }
   }
@@ -291,61 +411,177 @@
   function loadApprovals(currentUserId) {
     var panel = document.getElementById("panel-approvals");
     var navCount = document.getElementById("nav-approval-count");
+
     if (!panel) return Promise.resolve();
 
-    Dash.renderLoading(panel, "Loading pending approval requests…");
+    Dash.renderLoading(
+      panel,
+      "Loading pending trainer applications…"
+    );
 
     return Promise.all([
       Dash.safeSelect("profiles", "*"),
       Dash.safeSelect("approval_requests", "*")
-    ]).then(function (results) {
-      var profilesResult = results[0];
-      var approvalsResult = results[1];
+    ])
+      .then(function (results) {
 
-      var pendingProfiles = [];
-      var profileMap = {};
+        var profilesResult = results[0];
+        var approvalsResult = results[1];
 
-      if (profilesResult && profilesResult.rows) {
-        profilesResult.rows.forEach(function (p) {
-          profileMap[p.id] = p;
-          if (String(p.status || "").toLowerCase() === "pending") {
-            pendingProfiles.push(p);
-          }
-        });
-      }
+        var profileMap = {};
+        var pendingTrainers = {};
 
-      // Also check approval_requests table for pending records
-      if (approvalsResult && approvalsResult.rows) {
-        approvalsResult.rows.forEach(function (req) {
-          if (String(req.status || "").toLowerCase() === "pending") {
-            var matchingProfile = profileMap[req.user_id] || {
-              id: req.user_id,
-              name: req.user_name || "Applicant",
-              email: req.user_email || "—",
-              employee_id: req.employee_id || "—",
-              role: req.requested_role || "trainer",
-              status: "pending"
-            };
-            if (!pendingProfiles.some(function (p) { return p.id === req.user_id; })) {
-              pendingProfiles.push(matchingProfile);
+        /*
+         * Build a profile lookup.
+         */
+        if (profilesResult && profilesResult.rows) {
+
+          profilesResult.rows.forEach(function (profile) {
+
+            profileMap[profile.id] = profile;
+
+            /*
+             * ONLY TRAINERS with pending status
+             * belong in the approval queue.
+             */
+            if (
+              String(profile.role || "").toLowerCase() === "trainer" &&
+              String(profile.status || "").toLowerCase() === "pending"
+            ) {
+              pendingTrainers[profile.id] = {
+                user_id: profile.id,
+                name: profile.name || "",
+                email: profile.email || "",
+                employee_id: profile.employee_id || "",
+                role: "trainer",
+                status: "pending"
+              };
             }
+          });
+        }
+
+        /*
+         * Check approval_requests as the authoritative
+         * approval queue.
+         */
+        if (approvalsResult && approvalsResult.rows) {
+
+          approvalsResult.rows.forEach(function (request) {
+
+            if (
+              String(request.status || "").toLowerCase() !== "pending"
+            ) {
+              return;
+            }
+
+            /*
+             * Only trainer requests.
+             */
+            if (
+              String(request.requested_role || "").toLowerCase() !==
+              "trainer"
+            ) {
+              return;
+            }
+
+            var profile = profileMap[request.user_id];
+
+            /*
+             * If the profile exists, make sure it is also
+             * a trainer and still pending.
+             */
+            if (profile) {
+
+              if (
+                String(profile.role || "").toLowerCase() !==
+                "trainer"
+              ) {
+                return;
+              }
+
+              if (
+                String(profile.status || "").toLowerCase() !==
+                "pending"
+              ) {
+                return;
+              }
+
+              pendingTrainers[request.user_id] = {
+                user_id: request.user_id,
+                name: profile.name || "",
+                email: profile.email || "",
+                employee_id: profile.employee_id || "",
+                role: "trainer",
+                status: "pending"
+              };
+
+            } else {
+
+              /*
+               * Fallback if approval request exists but
+               * profile cannot currently be read.
+               */
+              pendingTrainers[request.user_id] = {
+                user_id: request.user_id,
+                name: request.user_name || "Applicant",
+                email: request.user_email || "",
+                employee_id: request.employee_id || "",
+                role: "trainer",
+                status: "pending"
+              };
+            }
+          });
+        }
+
+        var requests = Object.keys(pendingTrainers).map(
+          function (id) {
+            return pendingTrainers[id];
           }
-        });
-      }
+        );
 
-      Dash.setStat("stat-approvals", pendingProfiles.length);
-      if (navCount) {
-        navCount.textContent = pendingProfiles.length;
-        navCount.hidden = pendingProfiles.length === 0;
-      }
+        /*
+         * Update counters.
+         */
+        Dash.setStat(
+          "stat-approvals",
+          requests.length
+        );
 
-      renderApprovalsTable(panel, pendingProfiles, currentUserId);
-    }).catch(function (err) {
-      Dash.setStat("stat-approvals", 0);
-      Dash.renderError(panel, "Could not load approval requests.", function () {
-        loadApprovals(currentUserId);
+        if (navCount) {
+          navCount.textContent = requests.length;
+          navCount.hidden = requests.length === 0;
+        }
+
+        /*
+         * Render only pending trainers.
+         */
+        renderApprovalsTable(
+          panel,
+          requests,
+          currentUserId
+        );
+
+      })
+      .catch(function (err) {
+
+        console.error(
+          "Approval loading error:",
+          err
+        );
+
+        Dash.setStat(
+          "stat-approvals",
+          0
+        );
+
+        Dash.renderError(
+          panel,
+          "Could not load trainer approval requests.",
+          function () {
+            loadApprovals(currentUserId);
+          }
+        );
       });
-    });
   }
 
   function wireSubtabs() {

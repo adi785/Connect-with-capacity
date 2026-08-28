@@ -14,4 +14,5 @@ const supabaseClient = window.supabase ? window.supabase.createClient(
     SUPABASE_ANON_KEY
 ) : null;
 
+window.supabaseClient = supabaseClient;
 console.log("Supabase client initialized for Capacity Connect");

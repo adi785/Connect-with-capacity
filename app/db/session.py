@@ -16,7 +16,7 @@ from app.core.config import settings
 
 
 def _engine_kwargs() -> dict:
-    kwargs: dict = {"echo": settings.db_echo, "pool_pre_ping": True}
+    kwargs: dict = {"echo": settings.db_echo, "pool_pre_ping": True, "pool_recycle": 1800}
     # NullPool-style URLs (e.g. pgbouncer) ignore sizing; only pass it for direct conns.
     if "sqlite" not in settings.database_url:
         kwargs["pool_size"] = settings.db_pool_size

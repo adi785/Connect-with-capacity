@@ -1,8 +1,8 @@
 /* ==========================================================================
-   CAPACITY CONNECT — Frontend API client
+   CAPACITY CONNECT — Optimized Frontend API client
    --------------------------------------------------------------------------
-   Centralized CORS fetch wrapper. Automatically forwards the Supabase/dev
-   bearer token when one is available.
+   Centralized CORS fetch wrapper with token caching, AbortController
+   timeout protection, and structured error propagation.
    ========================================================================== */
 (function (window) {
   "use strict";
@@ -10,25 +10,34 @@
   var config = window.CapacityConnectConfig || {};
   var baseUrl = String(config.API_BASE_URL || "").replace(/\/+$/, "");
 
+  var cachedToken = null;
+  var cachedTokenExpiry = 0;
+
   function buildUrl(path) {
     if (!baseUrl) throw new Error("Capacity Connect API is not configured.");
     return baseUrl + (path ? "/" + String(path).replace(/^\/+/, "") : "");
   }
 
   async function getToken() {
+    var now = Date.now();
+    if (cachedToken && now < cachedTokenExpiry) {
+      return cachedToken;
+    }
+
     try {
       if (window.supabaseClient) {
-        const { data, error } =
-          await window.supabaseClient.auth.getSession();
-
-        if (!error && data && data.session) {
-          return data.session.access_token;
+        var res = await window.supabaseClient.auth.getSession();
+        if (!res.error && res.data && res.data.session) {
+          cachedToken = res.data.session.access_token;
+          cachedTokenExpiry = now + 15000; // cache for 15 seconds
+          return cachedToken;
         }
       }
     } catch (error) {
-      console.error("Unable to get Supabase session:", error);
+      console.warn("Unable to get Supabase session:", error);
     }
 
+    cachedToken = null;
     return null;
   }
 
@@ -41,10 +50,34 @@
       headers.Authorization = "Bearer " + token;
     }
 
-    var response = await fetch(buildUrl(path), Object.assign({}, options, {
+    var timeoutMs = options.timeout || 30000;
+    var controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    var timeoutId = null;
+
+    var fetchOpts = Object.assign({}, options, {
       headers: headers,
       mode: "cors"
-    }));
+    });
+
+    if (controller) {
+      fetchOpts.signal = controller.signal;
+      timeoutId = setTimeout(function () {
+        controller.abort();
+      }, timeoutMs);
+    }
+
+    var response;
+    try {
+      response = await fetch(buildUrl(path), fetchOpts);
+    } catch (fetchErr) {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (fetchErr.name === "AbortError") {
+        throw new Error("Request timed out after " + (timeoutMs / 1000) + "s.");
+      }
+      throw fetchErr;
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+    }
 
     var contentType = response.headers.get("content-type") || "";
     var body = contentType.indexOf("application/json") !== -1
@@ -68,6 +101,10 @@
     baseUrl: baseUrl,
     url: buildUrl,
     request: request,
+    clearTokenCache: function () {
+      cachedToken = null;
+      cachedTokenExpiry = 0;
+    },
     get: function (path, options) {
       return request(path, Object.assign({}, options || {}, { method: "GET" }));
     },

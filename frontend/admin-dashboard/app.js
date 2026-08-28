@@ -27,6 +27,17 @@
     pendingConfirmAction: null
   };
 
+  function debounce(fn, delay) {
+    var timer = null;
+    return function () {
+      var context = this, args = arguments;
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        fn.apply(context, args);
+      }, delay || 200);
+    };
+  }
+
   /* ------------------------------------------------------------------------
      UI Helpers & Notifications
      ------------------------------------------------------------------------ */
@@ -1019,14 +1030,14 @@
     var searchCourse = document.getElementById("admin-courses-search");
     var filterCourseStatus = document.getElementById("admin-courses-status-filter");
     var filterCourseSub = document.getElementById("admin-courses-subject-filter");
-    if (searchCourse) searchCourse.addEventListener("input", renderCoursesTable);
+    if (searchCourse) searchCourse.addEventListener("input", debounce(renderCoursesTable, 200));
     if (filterCourseStatus) filterCourseStatus.addEventListener("change", renderCoursesTable);
     if (filterCourseSub) filterCourseSub.addEventListener("change", renderCoursesTable);
 
     var searchAnn = document.getElementById("admin-announcements-search");
     var filterAnnStatus = document.getElementById("admin-announcements-status-filter");
     var filterAnnAudience = document.getElementById("admin-announcements-audience-filter");
-    if (searchAnn) searchAnn.addEventListener("input", renderAnnouncementsTable);
+    if (searchAnn) searchAnn.addEventListener("input", debounce(renderAnnouncementsTable, 200));
     if (filterAnnStatus) filterAnnStatus.addEventListener("change", renderAnnouncementsTable);
     if (filterAnnAudience) filterAnnAudience.addEventListener("change", renderAnnouncementsTable);
 

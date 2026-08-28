@@ -66,6 +66,17 @@
     }, 4500);
   }
 
+  function debounce(fn, delay) {
+    var timer = null;
+    return function () {
+      var context = this, args = arguments;
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        fn.apply(context, args);
+      }, delay || 200);
+    };
+  }
+
   /* ------------------------------------------------------------------------
      Modal Management
      ------------------------------------------------------------------------ */
@@ -1496,9 +1507,9 @@
     // Courses filter inputs
     var searchInput = document.getElementById("courses-search");
     if (searchInput) {
-      searchInput.addEventListener("input", function () {
+      searchInput.addEventListener("input", debounce(function () {
         renderCoursesList();
-      });
+      }, 200));
     }
 
     var statusFilter = document.getElementById("courses-status-filter");

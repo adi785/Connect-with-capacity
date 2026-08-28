@@ -350,16 +350,20 @@
     html += '</tr></thead><tbody>';
 
     state.approvals.forEach(function (appr) {
+      var displayName = appr.user_name || appr.name || "Applicant";
+      var displayEmail = appr.user_email || appr.email || "—";
+      var reqId = appr.id || appr.user_id;
+
       html += '<tr>';
-      html += '  <td class="cell-strong">' + Dash.escape(appr.name || "Applicant") + '</td>';
-      html += '  <td>' + Dash.escape(appr.email || "—") + '</td>';
+      html += '  <td class="cell-strong">' + Dash.escape(displayName) + '</td>';
+      html += '  <td>' + Dash.escape(displayEmail) + '</td>';
       html += '  <td>' + Dash.escape(appr.employee_id || "—") + '</td>';
-      html += '  <td><span class="role-badge role-badge--trainer">Trainer</span></td>';
+      html += '  <td><span class="role-badge role-badge--trainer">' + Dash.escape(Dash.titleCase(appr.requested_role || "trainer")) + '</span></td>';
       html += '  <td>' + statusPill(appr.status) + '</td>';
       html += '  <td style="text-align:right;">';
       html += '    <div style="display:inline-flex; gap:6px;">';
-      html += '      <button class="btn btn--sm btn--approve btn-approval-action" type="button" data-appr-id="' + Dash.escape(appr.id || appr.user_id) + '" data-user-id="' + Dash.escape(appr.user_id) + '" data-decision="approve">✓ Approve</button>';
-      html += '      <button class="btn btn--sm btn--reject btn-approval-action" type="button" data-appr-id="' + Dash.escape(appr.id || appr.user_id) + '" data-user-id="' + Dash.escape(appr.user_id) + '" data-decision="reject">✕ Reject</button>';
+      html += '      <button class="btn btn--sm btn--approve btn-approval-action" type="button" data-appr-id="' + Dash.escape(reqId) + '" data-user-id="' + Dash.escape(appr.user_id) + '" data-decision="approved">✓ Approve</button>';
+      html += '      <button class="btn btn--sm btn--reject btn-approval-action" type="button" data-appr-id="' + Dash.escape(reqId) + '" data-user-id="' + Dash.escape(appr.user_id) + '" data-decision="rejected">✕ Reject</button>';
       html += '    </div>';
       html += '  </td>';
       html += '</tr>';
@@ -639,18 +643,19 @@
      ------------------------------------------------------------------------ */
 
   // 1. Approval Decisions
-  async function handleApprovalDecision(userId, decision, btnEl) {
-    if (!userId || !decision) return;
+  async function handleApprovalDecision(reqOrUserId, decision, btnEl) {
+    if (!reqOrUserId || !decision) return;
 
-    var actionLabel = decision === "approve" ? "Approving…" : "Rejecting…";
+    var normalizedDecision = decision === "approve" ? "approved" : (decision === "reject" ? "rejected" : decision);
+    var actionLabel = normalizedDecision === "approved" ? "Approving…" : "Rejecting…";
     if (btnEl) { btnEl.disabled = true; btnEl.textContent = actionLabel; }
 
     try {
-      await API.post("admin/approvals/" + userId + "/decision", {
-        decision: decision
+      await API.post("admin/approvals/" + reqOrUserId + "/decision", {
+        decision: normalizedDecision
       });
 
-      showToast("Applicant " + decision + "d successfully.", "success", "Approval Processed");
+      showToast("Applicant " + (normalizedDecision === "approved" ? "approved" : "rejected") + " successfully.", "success", "Approval Processed");
       await loadApprovals();
       await loadUsers();
       await loadDashboardMetrics();
@@ -660,7 +665,7 @@
     } finally {
       if (btnEl) {
         btnEl.disabled = false;
-        btnEl.textContent = decision === "approve" ? "✓ Approve" : "✕ Reject";
+        btnEl.textContent = normalizedDecision === "approved" ? "✓ Approve" : "✕ Reject";
       }
     }
   }
@@ -1067,9 +1072,10 @@
       // 1. Approval Decisions
       var apprBtn = e.target.closest(".btn-approval-action");
       if (apprBtn) {
+        var apprId = apprBtn.getAttribute("data-appr-id");
         var userId = apprBtn.getAttribute("data-user-id");
         var decision = apprBtn.getAttribute("data-decision");
-        handleApprovalDecision(userId, decision, apprBtn);
+        handleApprovalDecision(apprId || userId, decision, apprBtn);
         return;
       }
 

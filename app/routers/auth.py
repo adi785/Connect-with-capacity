@@ -89,6 +89,7 @@ async def register_profile(
 
 
 @router.get("/me", response_model=MeResponse, summary="The caller's own profile")
+@profile_router.get("/me", response_model=MeResponse, summary="The caller's own profile (profile prefix alias)")
 async def me(
     current_user: CurrentUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -107,6 +108,7 @@ async def me(
 
 
 @router.patch("/me", response_model=ProfileResponse, summary="Update own core profile")
+@profile_router.patch("/me", response_model=ProfileResponse, summary="Update own core profile (profile prefix alias)")
 async def update_me(
     payload: ProfileUpdate,
     current_user: CurrentUser = Depends(get_current_user),

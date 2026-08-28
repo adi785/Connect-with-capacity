@@ -76,7 +76,16 @@ async def decide_approval(
     Approval is what makes an account usable (FR-1.7): it flips
     `profiles.status` to 'approved' and provisions the matching role side-table row.
     """
+    decision = "approved" if decision in ("approve", "approved") else ("rejected" if decision in ("reject", "rejected") else decision)
+
     request = await db.get(ApprovalRequest, request_id)
+    if request is None:
+        request = await db.scalar(
+            select(ApprovalRequest).where(
+                ApprovalRequest.user_id == request_id,
+                ApprovalRequest.status == "pending",
+            )
+        )
     if request is None:
         raise NotFound("Approval request not found", code="approval_not_found")
     if request.status != "pending":

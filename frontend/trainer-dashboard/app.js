@@ -1365,7 +1365,7 @@
     try {
       // 1. Update name if changed
       if (nameVal !== state.user.name) {
-        await API.patch("profile/me", { name: nameVal });
+        await API.patch("auth/me", { name: nameVal });
         state.user.name = nameVal;
         var topName = document.getElementById("user-name");
         if (topName) topName.textContent = nameVal;

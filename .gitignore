@@ -1,4 +1,4 @@
-﻿# Secrets & Environment Variables
+# Secrets & Environment Variables
 .env
 *.env
 !.env.example
@@ -21,6 +21,9 @@ build/
 .pytest_cache/
 .coverage
 htmlcov/
+*.db
+*.sqlite
+*.sqlite3
 
 # Node
 node_modules/

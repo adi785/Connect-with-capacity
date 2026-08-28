@@ -20,6 +20,7 @@ from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.errors import BadRequest, Conflict, Forbidden, NotFound
 from app.db.models import (
@@ -89,7 +90,13 @@ async def get_editable_assessment(
     db: AsyncSession, current_user: CurrentUser, assessment_id: uuid.UUID
 ) -> Assessment:
     """Load an assessment and verify the caller may edit its parent course."""
-    assessment = await db.get(Assessment, assessment_id)
+    res = await db.execute(
+        select(Assessment)
+        .where(Assessment.id == assessment_id)
+        .options(selectinload(Assessment.questions).selectinload(Question.options))
+        .execution_options(populate_existing=True)
+    )
+    assessment = res.scalar_one_or_none()
     if assessment is None:
         raise NotFound("Assessment not found", code="assessment_not_found")
     await course_service.get_editable_course(db, current_user, assessment.course_id)
@@ -171,10 +178,8 @@ async def add_questions(
                     is_correct=option.get("is_correct", False),
                 )
             )
-
-    await db.flush()
-    await db.refresh(assessment)
-    return assessment
+        await db.flush()
+    return await get_editable_assessment(db, current_user, assessment_id)
 
 
 async def delete_question(
@@ -204,7 +209,7 @@ def _header(assessment: Assessment) -> dict[str, Any]:
         "title": assessment.title,
         "deadline": assessment.deadline,
         "time_limit_minutes": assessment.time_limit_minutes,
-        "pass_percentage": assessment.pass_percentage or 50,
+        "pass_percentage": assessment.pass_percentage,
         "status": assessment.status,
         "created_by": assessment.created_by,
         "question_count": question_count,
@@ -272,7 +277,9 @@ async def list_assessments(
     Trainees only see published assessments on courses they are enrolled in — an
     unenrolled trainee should not be able to enumerate a course's exams.
     """
-    query = select(Assessment)
+    query = select(Assessment).options(
+        selectinload(Assessment.questions).selectinload(Question.options)
+    )
     count_q = select(func.count(Assessment.id))
 
     filters = []
@@ -299,9 +306,13 @@ async def list_assessments(
         query = query.where(f)
         count_q = count_q.where(f)
 
-    total = (await db.scalar(count_q)) or 0
-    rows = await db.scalars(query.order_by(Assessment.title).limit(limit).offset(offset))
-    return [_header(a) for a in rows.all()], total
+    total = await db.scalar(count_q) or 0
+    items = (
+        await db.scalars(
+            query.order_by(Assessment.created_at.desc()).offset(offset).limit(limit)
+        )
+    ).all()
+    return [serialize_summary(a) for a in items], total
 
 
 async def get_assessment_for_caller(
@@ -313,7 +324,13 @@ async def get_assessment_for_caller(
     `serialize_full` and `serialize_for_taking`, so the choice is made from an
     authorization result rather than from the caller's own request.
     """
-    assessment = await db.get(Assessment, assessment_id)
+    res = await db.execute(
+        select(Assessment)
+        .where(Assessment.id == assessment_id)
+        .options(selectinload(Assessment.questions).selectinload(Question.options))
+        .execution_options(populate_existing=True)
+    )
+    assessment = res.scalar_one_or_none()
     if assessment is None:
         raise NotFound("Assessment not found", code="assessment_not_found")
 
@@ -351,7 +368,10 @@ async def get_assessment_for_caller(
 def _expires_at(attempt: AssessmentAttempt, assessment: Assessment) -> dt.datetime | None:
     if not assessment.time_limit_minutes or attempt.started_at is None:
         return None
-    return attempt.started_at + dt.timedelta(minutes=assessment.time_limit_minutes)
+    started_at = attempt.started_at
+    if started_at.tzinfo is None:
+        started_at = started_at.replace(tzinfo=dt.timezone.utc)
+    return started_at + dt.timedelta(minutes=assessment.time_limit_minutes)
 
 
 async def start_attempt(
@@ -373,8 +393,12 @@ async def start_attempt(
         raise Conflict("This assessment has no questions yet", code="assessment_empty")
 
     now = dt.datetime.now(dt.timezone.utc)
-    if assessment.deadline is not None and now > assessment.deadline:
-        raise Conflict("The deadline for this assessment has passed", code="deadline_passed")
+    if assessment.deadline is not None:
+        deadline_val = assessment.deadline
+        if deadline_val.tzinfo is None:
+            deadline_val = deadline_val.replace(tzinfo=dt.timezone.utc)
+        if now > deadline_val:
+            raise Conflict("The deadline for this assessment has passed", code="deadline_passed")
 
     # Resume an unfinished attempt rather than silently starting a second one.
     attempt = await db.scalar(
@@ -445,7 +469,13 @@ async def submit_attempt(
     if attempt.status == "expired":
         raise Conflict("This attempt has expired", code="attempt_expired")
 
-    assessment = await db.get(Assessment, attempt.assessment_id)
+    res = await db.execute(
+        select(Assessment)
+        .where(Assessment.id == attempt.assessment_id)
+        .options(selectinload(Assessment.questions).selectinload(Question.options))
+        .execution_options(populate_existing=True)
+    )
+    assessment = res.scalar_one_or_none()
     if assessment is None:
         raise NotFound("Assessment not found", code="assessment_not_found")
 

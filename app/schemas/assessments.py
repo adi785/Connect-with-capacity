@@ -43,10 +43,12 @@ class AssessmentUpdate(APIModel):
 class OptionCreate(APIModel):
     option_text: str = Field(min_length=1, max_length=500)
     is_correct: bool = False
+    sequence_no: Optional[int] = Field(default=None, alias="sequenceNo")
 
 
 class QuestionCreate(APIModel):
     question_text: str = Field(min_length=1)
+    type: Optional[str] = "single_choice"
     marks: int = Field(default=1, ge=1)
     options: list[OptionCreate] = Field(min_length=2, max_length=10)
 

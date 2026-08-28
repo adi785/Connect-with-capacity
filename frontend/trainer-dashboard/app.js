@@ -518,6 +518,15 @@
     try {
       var courseDetail = await API.get("courses/" + courseId);
       state.activeCourse = courseDetail;
+
+      try {
+        var assessRes = await API.get("assessments?courseId=" + courseId + "&limit=50");
+        state.activeCourseAssessments = (assessRes && assessRes.items) || (Array.isArray(assessRes) ? assessRes : []);
+      } catch (aErr) {
+        console.warn("Could not load course assessments:", aErr);
+        state.activeCourseAssessments = [];
+      }
+
       renderCourseBuilder();
     } catch (err) {
       console.error("Failed to load course detail:", err);
@@ -536,6 +545,7 @@
     var c = state.activeCourse;
     var subjectLabel = c.subject_name || getSubjectName(c.subject_id) || "General Subject";
     var modules = Array.isArray(c.modules) ? c.modules : [];
+    var assessments = Array.isArray(state.activeCourseAssessments) ? state.activeCourseAssessments : [];
 
     // Sort modules by sequence_no
     modules.sort(function (a, b) {
@@ -555,6 +565,7 @@
     html += '      <span><strong>Subject:</strong> ' + Dash.escape(subjectLabel) + '</span>';
     html += '      <span>' + statusPill(c.status) + '</span>';
     html += '      <span><strong>Modules:</strong> ' + modules.length + '</span>';
+    html += '      <span><strong>Assessments:</strong> ' + assessments.length + '</span>';
     html += '      <span><strong>Trainees:</strong> ' + (c.enrollment_count || 0) + '</span>';
     html += '    </div>';
     html += '  </div>';
@@ -576,6 +587,9 @@
       html += '      Revert to Draft';
       html += '    </button>';
     }
+    html += '    <button class="btn btn--outline btn--sm" style="background:#fff; color:var(--accent-orange-dark);" type="button" id="btn-builder-add-assessment">';
+    html += '      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg> + Create Assessment';
+    html += '    </button>';
     html += '    <button class="btn btn--orange btn--sm" type="button" id="btn-builder-add-module">';
     html += '      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 5v14M5 12h14"/></svg> + Add Module';
     html += '    </button>';
@@ -584,13 +598,13 @@
 
     // Modules List
     if (!modules.length) {
-      html += '<div class="panel" style="padding: 30px; text-align: center;">';
+      html += '<div class="panel" style="padding: 30px; text-align: center; margin-bottom: 24px;">';
       html += '  <h3 style="color:var(--primary-blue-dark); margin-bottom:8px;">Curriculum is empty</h3>';
       html += '  <p style="color:var(--text-muted); font-size:0.875rem; margin-bottom:18px;">Start designing your syllabus by adding the first lesson module.</p>';
       html += '  <button class="btn btn--orange btn--sm" type="button" id="btn-empty-add-module">+ Add First Module</button>';
       html += '</div>';
     } else {
-      html += '<div class="module-list">';
+      html += '<div class="module-list" style="margin-bottom: 30px;">';
       modules.forEach(function (m, idx) {
         var seq = m.sequence_no !== undefined ? m.sequence_no : (idx + 1);
         var resources = Array.isArray(m.resources) ? m.resources : [];
@@ -658,6 +672,60 @@
       });
       html += '</div>';
     }
+
+    // Assessments & Quizzes Section
+    html += '<div class="panel" style="margin-top: 24px;">';
+    html += '  <div class="panel__head">';
+    html += '    <div class="panel__titles">';
+    html += '      <h2 class="panel__title">Course Assessments &amp; Quizzes</h2>';
+    html += '      <p class="panel__sub">Knowledge checks and certification examinations required for completion.</p>';
+    html += '    </div>';
+    html += '    <button class="btn btn--orange btn--sm" type="button" id="btn-section-create-assessment">';
+    html += '      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg> + Create Assessment';
+    html += '    </button>';
+    html += '  </div>';
+
+    if (!assessments.length) {
+      html += '  <div class="panel__body" style="padding: 24px; text-align: center; color: var(--text-muted);">';
+      html += '    <p style="margin: 0 0 12px 0;">No assessments created for this course yet.</p>';
+      html += '    <button class="btn btn--outline btn--sm" type="button" id="btn-empty-create-assessment">+ Create First Assessment</button>';
+      html += '  </div>';
+    } else {
+      html += '  <div class="panel__body panel__body--flush">';
+      html += '    <div class="table-scroll"><table class="data-table">';
+      html += '      <thead><tr>';
+      html += '        <th scope="col">Assessment Title</th>';
+      html += '        <th scope="col">Pass Required</th>';
+      html += '        <th scope="col">Time Limit</th>';
+      html += '        <th scope="col">Status</th>';
+      html += '        <th scope="col" style="text-align:right;">Actions</th>';
+      html += '      </tr></thead><tbody>';
+
+      assessments.forEach(function (a) {
+        var timeLabel = a.time_limit_minutes ? (a.time_limit_minutes + " mins") : "No limit";
+        var isPub = a.status === "published";
+
+        html += '      <tr>';
+        html += '        <td class="cell-strong">' + Dash.escape(a.title) + '</td>';
+        html += '        <td><span class="pill pill--orange">' + (a.pass_percentage || 70) + '%</span></td>';
+        html += '        <td>' + Dash.escape(timeLabel) + '</td>';
+        html += '        <td>' + statusPill(a.status) + '</td>';
+        html += '        <td style="text-align:right; display:flex; justify-content:flex-end; gap:6px;">';
+        html += '          <button class="btn btn--orange btn--sm btn-manage-questions" type="button" data-assessment-id="' + Dash.escape(a.id) + '">Manage Questions</button>';
+        if (!isPub) {
+          html += '          <button class="btn btn--approve btn--sm btn-publish-assessment" type="button" data-assessment-id="' + Dash.escape(a.id) + '">Publish</button>';
+        } else {
+          html += '          <button class="btn btn--outline btn--sm btn-draft-assessment" type="button" data-assessment-id="' + Dash.escape(a.id) + '">Revert</button>';
+        }
+        html += '          <button class="btn btn--reject btn--sm btn-delete-assessment" type="button" data-assessment-id="' + Dash.escape(a.id) + '">Delete</button>';
+        html += '        </td>';
+        html += '      </tr>';
+      });
+
+      html += '      </tbody></table></div>';
+      html += '  </div>';
+    }
+    html += '</div>';
 
     container.innerHTML = html;
   }
@@ -1763,6 +1831,297 @@
 
       // 11. Delete Skill
       var delSkillBtn = e.target.closest(".btn-delete-skill");
+      if (delSkillBtn) {
+        var skId = delSkillBtn.getAttribute("data-skill-id");
+        handleDeleteSkill(skId);
+        return;
+      }
+
+      // 12. Assessment Actions
+      if (e.target.closest("#btn-builder-add-assessment") || e.target.closest("#btn-section-create-assessment") || e.target.closest("#btn-empty-create-assessment")) {
+        if (state.activeCourseId) {
+          document.getElementById("assessment-course-id").value = state.activeCourseId;
+          var fAss = document.getElementById("form-create-assessment");
+          if (fAss) fAss.reset();
+          openModal("modal-create-assessment");
+        }
+        return;
+      }
+
+      var manageQBtn = e.target.closest(".btn-manage-questions");
+      if (manageQBtn) {
+        var aId = manageQBtn.getAttribute("data-assessment-id");
+        openManageQuestionsModal(aId);
+        return;
+      }
+
+      var pubAssBtn = e.target.closest(".btn-publish-assessment");
+      if (pubAssBtn) {
+        var pAssId = pubAssBtn.getAttribute("data-assessment-id");
+        handlePublishAssessment(pAssId);
+        return;
+      }
+
+      var draftAssBtn = e.target.closest(".btn-draft-assessment");
+      if (draftAssBtn) {
+        var drAssId = draftAssBtn.getAttribute("data-assessment-id");
+        handleDraftAssessment(drAssId);
+        return;
+      }
+
+      var delAssBtn = e.target.closest(".btn-delete-assessment");
+      if (delAssBtn) {
+        var dAssId = delAssBtn.getAttribute("data-assessment-id");
+        handleDeleteAssessment(dAssId);
+        return;
+      }
+
+      var delQBtn = e.target.closest(".btn-delete-question");
+      if (delQBtn) {
+        var dqId = delQBtn.getAttribute("data-question-id");
+        handleDeleteQuestion(dqId);
+        return;
+      }
+    });
+
+    // Form: Create Assessment
+    var createAssForm = document.getElementById("form-create-assessment");
+    if (createAssForm) createAssForm.addEventListener("submit", handleCreateAssessment);
+
+    // Form: Add Question
+    var addQForm = document.getElementById("form-add-question");
+    if (addQForm) addQForm.addEventListener("submit", handleAddQuestion);
+  }
+
+  /* ------------------------------------------------------------------------
+     Assessment Handlers
+     ------------------------------------------------------------------------ */
+
+  async function handleCreateAssessment(e) {
+    e.preventDefault();
+    var form = e.target;
+    var errorEl = document.getElementById("create-assessment-error");
+    var submitBtn = document.getElementById("btn-submit-create-assessment");
+    if (errorEl) errorEl.hidden = true;
+
+    var courseId = document.getElementById("assessment-course-id").value;
+    var title = form.title.value.trim();
+    var passPct = parseInt(form.pass_percentage.value, 10) || 70;
+    var timeLimit = parseInt(form.time_limit_minutes.value, 10) || null;
+    var statusVal = form.status.value || "draft";
+
+    if (!courseId || !title) return;
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Creating…"; }
+
+    try {
+      var newAss = await API.post("assessments", {
+        course_id: courseId,
+        title: title,
+        pass_percentage: passPct,
+        time_limit_minutes: timeLimit,
+        status: statusVal
+      });
+
+      showToast("Assessment created successfully!", "success", "Assessment Created");
+      closeModal("modal-create-assessment");
+      form.reset();
+
+      if (state.activeCourseId) {
+        await openCourseBuilder(state.activeCourseId);
+      }
+    } catch (err) {
+      console.error("Create assessment failed:", err);
+      if (errorEl) {
+        errorEl.textContent = err.message || "Failed to create assessment.";
+        errorEl.hidden = false;
+      }
+    } finally {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Create Assessment"; }
+    }
+  }
+
+  async function openManageQuestionsModal(assessmentId) {
+    if (!assessmentId) return;
+    document.getElementById("manage-questions-assessment-id").value = assessmentId;
+    var qBody = document.getElementById("existing-questions-body");
+    if (qBody) Dash.renderLoading(qBody, "Loading questions and options…");
+    openModal("modal-manage-questions");
+
+    try {
+      var assFull = await API.get("assessments/" + assessmentId + "/full");
+      renderExistingQuestions(assFull);
+    } catch (err) {
+      console.error("Failed to load questions:", err);
+      if (qBody) {
+        Dash.renderError(qBody, "Could not load questions: " + (err.message || "Error"), function () {
+          openManageQuestionsModal(assessmentId);
+        });
+      }
+    }
+  }
+
+  function renderExistingQuestions(assFull) {
+    var qBody = document.getElementById("existing-questions-body");
+    if (!qBody) return;
+
+    var questions = (assFull && Array.isArray(assFull.questions)) ? assFull.questions : [];
+    if (!questions.length) {
+      qBody.innerHTML = '<div style="padding: 14px; text-align: center; color: var(--text-muted); font-size: 0.875rem; background: var(--warm-white); border-radius: var(--radius-sm); border: 1px dashed var(--border);">No questions in this assessment yet. Use the form below to add questions.</div>';
+      return;
+    }
+
+    var html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
+    questions.forEach(function (q, idx) {
+      html += '<div style="background: #fff; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">';
+      html += '  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">';
+      html += '    <h5 style="margin:0; font-size: 0.9375rem; color: var(--primary-blue-dark); font-weight: 700;">' + (idx + 1) + '. ' + Dash.escape(q.question_text) + '</h5>';
+      html += '    <div style="display: flex; align-items: center; gap: 8px;">';
+      html += '      <span class="pill pill--orange" style="font-size: 0.75rem;">' + (q.marks || 1) + ' mark(s)</span>';
+      html += '      <button class="btn btn--reject btn--sm btn-delete-question" type="button" data-question-id="' + Dash.escape(q.id) + '" title="Delete question">✕</button>';
+      html += '    </div>';
+      html += '  </div>';
+
+      var options = Array.isArray(q.options) ? q.options : [];
+      html += '  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.8125rem;">';
+      options.forEach(function (opt) {
+        var isCorrect = Boolean(opt.is_correct);
+        var optStyle = isCorrect
+          ? 'background: #e8f5e9; color: #2e7d32; font-weight: 700; border: 1px solid #c8e6c9;'
+          : 'background: var(--warm-white); color: var(--text-dark); border: 1px solid var(--border-light);';
+        html += '    <div style="padding: 6px 10px; border-radius: var(--radius-sm); ' + optStyle + '">';
+        html += (isCorrect ? '✓ ' : '• ') + Dash.escape(opt.option_text);
+        html += '    </div>';
+      });
+      html += '  </div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    qBody.innerHTML = html;
+  }
+
+  async function handleAddQuestion(e) {
+    e.preventDefault();
+    var form = e.target;
+    var errorEl = document.getElementById("add-question-error");
+    var submitBtn = document.getElementById("btn-submit-add-question");
+    if (errorEl) errorEl.hidden = true;
+
+    var assessmentId = document.getElementById("manage-questions-assessment-id").value;
+    var qText = form.question_text.value.trim();
+    var qType = form.type.value || "single_choice";
+    var marks = parseInt(form.marks.value, 10) || 10;
+    var correctIdx = parseInt(document.querySelector('input[name="correct_option"]:checked').value, 10);
+
+    var opt0 = document.getElementById("opt-text-0").value.trim();
+    var opt1 = document.getElementById("opt-text-1").value.trim();
+    var opt2 = document.getElementById("opt-text-2").value.trim();
+    var opt3 = document.getElementById("opt-text-3").value.trim();
+
+    if (!opt0 || !opt1 || !opt2 || !opt3) {
+      if (errorEl) { errorEl.textContent = "Please fill in all 4 option choices."; errorEl.hidden = false; }
+      return;
+    }
+
+    var optionsPayload = [
+      { option_text: opt0, is_correct: correctIdx === 0, sequence_no: 1 },
+      { option_text: opt1, is_correct: correctIdx === 1, sequence_no: 2 },
+      { option_text: opt2, is_correct: correctIdx === 2, sequence_no: 3 },
+      { option_text: opt3, is_correct: correctIdx === 3, sequence_no: 4 }
+    ];
+
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Adding Question…"; }
+
+    try {
+      var updatedAss = await API.post("assessments/" + assessmentId + "/questions", {
+        questions: [
+          {
+            question_text: qText,
+            type: qType,
+            marks: marks,
+            options: optionsPayload
+          }
+        ]
+      });
+
+      showToast("Question added to assessment.", "success", "Question Added");
+      form.reset();
+      document.getElementById("opt-radio-0").checked = true;
+
+      renderExistingQuestions(updatedAss);
+      if (state.activeCourseId) {
+        await openCourseBuilder(state.activeCourseId);
+      }
+    } catch (err) {
+      console.error("Add question failed:", err);
+      if (errorEl) {
+        errorEl.textContent = err.message || "Failed to add question.";
+        errorEl.hidden = false;
+      }
+    } finally {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Add Question to Assessment"; }
+    }
+  }
+
+  async function handleDeleteQuestion(questionId) {
+    confirmAction("Delete this question from the assessment?", async function () {
+      try {
+        await API.del("questions/" + questionId);
+        showToast("Question deleted.", "success", "Question Removed");
+        var aId = document.getElementById("manage-questions-assessment-id").value;
+        if (aId) {
+          await openManageQuestionsModal(aId);
+        }
+        if (state.activeCourseId) {
+          await openCourseBuilder(state.activeCourseId);
+        }
+      } catch (err) {
+        console.error("Delete question failed:", err);
+        showToast("Could not delete question: " + (err.message || "Error"), "error");
+      }
+    }, "Delete Question");
+  }
+
+  async function handlePublishAssessment(assessmentId) {
+    try {
+      await API.patch("assessments/" + assessmentId, { status: "published" });
+      showToast("Assessment published! Trainees can now take this assessment.", "success", "Assessment Published");
+      if (state.activeCourseId) {
+        await openCourseBuilder(state.activeCourseId);
+      }
+    } catch (err) {
+      console.error("Publish assessment failed:", err);
+      showToast("Failed to publish assessment: " + (err.message || "Must have at least one question"), "error");
+    }
+  }
+
+  async function handleDraftAssessment(assessmentId) {
+    try {
+      await API.patch("assessments/" + assessmentId, { status: "draft" });
+      showToast("Assessment reverted to draft.", "info", "Assessment Draft");
+      if (state.activeCourseId) {
+        await openCourseBuilder(state.activeCourseId);
+      }
+    } catch (err) {
+      console.error("Revert assessment failed:", err);
+      showToast("Failed to update status: " + (err.message || "Error"), "error");
+    }
+  }
+
+  async function handleDeleteAssessment(assessmentId) {
+    confirmAction("Are you sure you want to delete this assessment?", async function () {
+      try {
+        await API.del("assessments/" + assessmentId);
+        showToast("Assessment deleted.", "success", "Assessment Deleted");
+        if (state.activeCourseId) {
+          await openCourseBuilder(state.activeCourseId);
+        }
+      } catch (err) {
+        console.error("Delete assessment failed:", err);
+        showToast("Cannot delete assessment: " + (err.message || "May have active attempts."), "error");
+      }
+    }, "Delete Assessment");
+  }
       if (delSkillBtn) {
         var skId = delSkillBtn.getAttribute("data-skill-id");
         handleDeleteSkill(skId);

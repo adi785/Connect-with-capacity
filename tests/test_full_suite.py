@@ -239,3 +239,78 @@ async def test_course_management_e2e(client: AsyncClient):
     )
     assert progress_res.status_code == 200
     assert progress_res.json()["progress_percent"] == 50
+
+    # 8. Trainer creates an assessment for this course
+    assess_res = await client.post(
+        "/api/v1/assessments",
+        headers=trainer_headers,
+        json={
+            "course_id": course_id,
+            "title": "FastAPI & PostgreSQL Comprehensive Exam",
+            "pass_percentage": 70,
+            "time_limit_minutes": 30,
+            "status": "draft",
+        },
+    )
+    assert assess_res.status_code in (200, 201)
+    assessment_id = assess_res.json()["id"]
+
+    # 9. Trainer adds a multiple-choice question
+    q_res = await client.post(
+        f"/api/v1/assessments/{assessment_id}/questions",
+        headers=trainer_headers,
+        json={
+            "questions": [
+                {
+                    "question_text": "Which HTTP method is idempotent and removes a resource?",
+                    "type": "single_choice",
+                    "marks": 10,
+                    "options": [
+                        {"option_text": "POST", "is_correct": False, "sequence_no": 1},
+                        {"option_text": "DELETE", "is_correct": True, "sequence_no": 2},
+                        {"option_text": "PATCH", "is_correct": False, "sequence_no": 3},
+                        {"option_text": "OPTIONS", "is_correct": False, "sequence_no": 4},
+                    ],
+                }
+            ]
+        },
+    )
+    assert q_res.status_code in (200, 201)
+    full_assessment = q_res.json()
+    assert len(full_assessment["questions"]) == 1
+    q_id = full_assessment["questions"][0]["id"]
+    correct_opt_id = [opt["id"] for opt in full_assessment["questions"][0]["options"] if opt["is_correct"]][0]
+
+    # 10. Trainer publishes the assessment
+    pub_assess_res = await client.patch(
+        f"/api/v1/assessments/{assessment_id}",
+        headers=trainer_headers,
+        json={"status": "published"},
+    )
+    assert pub_assess_res.status_code == 200
+    assert pub_assess_res.json()["status"] == "published"
+
+    # 11. Enrolled trainee starts the assessment attempt
+    attempt_res = await client.post(
+        f"/api/v1/assessments/{assessment_id}/attempts",
+        headers=trainee_headers,
+    )
+    assert attempt_res.status_code in (200, 201)
+    attempt_id = attempt_res.json()["id"]
+
+    # 12. Trainee submits the correct answer and passes
+    submit_res = await client.post(
+        f"/api/v1/attempts/{attempt_id}/submit",
+        headers=trainee_headers,
+        json={
+            "answers": [
+                {"question_id": q_id, "selected_option_id": correct_opt_id}
+            ]
+        },
+    )
+    assert submit_res.status_code == 200
+    result_data = submit_res.json()
+    assert result_data["passed"] is True
+    assert result_data["score"] == 100
+    assert result_data["obtained_marks"] == 10
+    assert result_data["total_marks"] == 10

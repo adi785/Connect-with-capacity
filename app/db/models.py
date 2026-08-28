@@ -73,6 +73,7 @@ class Profile(Base):
     firebase_uid: Mapped[str] = mapped_column(Text, unique=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     email: Mapped[str] = mapped_column(String(150), unique=True, nullable=False)
+    employee_id: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=True, index=True)
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="trainee")
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     mfa_enabled: Mapped[bool | None] = mapped_column(Boolean, default=False)

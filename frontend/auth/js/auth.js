@@ -104,34 +104,38 @@ const Auth = {
      */
 
     if (!email.includes("@")) {
+      let resolvedEmail = null;
 
-      const {
-        data: profile,
-        error
-      } = await supabaseClient
-        .from("profiles")
-        .select("email")
-        .eq("employee_id", email)
-        .maybeSingle();
-
-      if (error) {
-        console.error(
-          "Employee ID lookup failed:",
-          error
-        );
-
-        throw new Error(
-          "Unable to find an account with this Employee ID."
-        );
+      // 1. Try secure SECURITY DEFINER RPC
+      try {
+        const { data: rpcEmail, error: rpcError } = await supabaseClient.rpc("get_email_by_employee_id", {
+          p_employee_id: email
+        });
+        if (!rpcError && rpcEmail) {
+          resolvedEmail = rpcEmail;
+        }
+      } catch (rpcEx) {
+        console.warn("RPC employee ID lookup notice:", rpcEx);
       }
 
-      if (!profile || !profile.email) {
-        throw new Error(
-          "No account found with this Employee ID."
-        );
+      // 2. Fallback to direct profiles lookup if RPC is pending migration
+      if (!resolvedEmail) {
+        const { data: profile, error } = await supabaseClient
+          .from("profiles")
+          .select("email")
+          .eq("employee_id", email)
+          .maybeSingle();
+
+        if (profile && profile.email) {
+          resolvedEmail = profile.email;
+        }
       }
 
-      email = profile.email;
+      if (!resolvedEmail) {
+        throw new Error("No account found with this Employee ID. Please check and try again.");
+      }
+
+      email = resolvedEmail;
     }
 
 

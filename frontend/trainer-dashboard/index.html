@@ -647,6 +647,129 @@
     </div>
   </div>
 
+  <!-- Modal: Create Assessment -->
+  <div class="modal-backdrop" id="modal-create-assessment" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-create-assessment-title">
+    <div class="modal">
+      <div class="modal__header">
+        <h3 class="modal__title" id="modal-create-assessment-title">Create Course Assessment</h3>
+        <button class="modal__close" type="button" data-modal-close aria-label="Close modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="form-create-assessment">
+        <input type="hidden" id="assessment-course-id" />
+        <div class="modal__body">
+          <div class="form-group">
+            <label class="form-label" for="assessment-title">Assessment Title <span class="required">*</span></label>
+            <input type="text" class="form-input" id="assessment-title" name="title" required maxlength="200" placeholder="e.g. Final Comprehension & Knowledge Check" />
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label" for="assessment-pass-pct">Pass Percentage (%) <span class="required">*</span></label>
+              <input type="number" class="form-input" id="assessment-pass-pct" name="pass_percentage" min="1" max="100" value="70" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="assessment-time-limit">Time Limit (Minutes)</label>
+              <input type="number" class="form-input" id="assessment-time-limit" name="time_limit_minutes" min="5" max="300" value="30" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="assessment-status">Initial Status</label>
+            <select class="form-select" id="assessment-status" name="status">
+              <option value="draft" selected>Draft (Add questions before publishing)</option>
+              <option value="published">Published (Learners can take assessment)</option>
+            </select>
+          </div>
+          <div class="form-error" id="create-assessment-error" hidden></div>
+        </div>
+        <div class="modal__footer">
+          <button class="btn btn--outline btn--sm" type="button" data-modal-close>Cancel</button>
+          <button class="btn btn--orange btn--sm" type="submit" id="btn-submit-create-assessment">
+            Create Assessment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Manage Assessment Questions -->
+  <div class="modal-backdrop" id="modal-manage-questions" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-manage-questions-title">
+    <div class="modal modal--lg" style="max-width: 720px;">
+      <div class="modal__header">
+        <h3 class="modal__title" id="modal-manage-questions-title">Manage Assessment Questions</h3>
+        <button class="modal__close" type="button" data-modal-close aria-label="Close modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal__body" style="max-height: 75vh; overflow-y: auto;">
+        <input type="hidden" id="manage-questions-assessment-id" />
+        
+        <!-- Existing Questions List -->
+        <div id="questions-list-container" style="margin-bottom: 24px;">
+          <h4 style="font-size: 0.9375rem; color: var(--primary-blue-dark); margin: 0 0 12px 0;">Current Questions</h4>
+          <div id="existing-questions-body"></div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border); margin: 20px 0;" />
+
+        <!-- Form: Add Question -->
+        <form id="form-add-question">
+          <h4 style="font-size: 0.9375rem; color: var(--accent-orange-dark); margin: 0 0 12px 0;">+ Add New Question</h4>
+          
+          <div class="form-group">
+            <label class="form-label" for="question-text">Question Prompt / Statement <span class="required">*</span></label>
+            <textarea class="form-textarea" id="question-text" name="question_text" required rows="2" placeholder="e.g. Which HTTP method is typically used for creating a resource?"></textarea>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="form-group" style="margin: 0;">
+              <label class="form-label" for="question-type">Question Type</label>
+              <select class="form-select" id="question-type" name="type">
+                <option value="single_choice">Single Choice (Multiple Choice)</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label class="form-label" for="question-marks">Marks / Weight</label>
+              <input type="number" class="form-input" id="question-marks" name="marks" min="1" max="100" value="10" required />
+            </div>
+          </div>
+
+          <label class="form-label" style="margin-bottom: 6px;">Options (Select the radio for the CORRECT answer) <span class="required">*</span></label>
+          
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="radio" name="correct_option" value="0" checked id="opt-radio-0" style="accent-color: #2e7d32; width: 18px; height: 18px;" />
+              <input type="text" class="form-input" id="opt-text-0" placeholder="Option A (e.g. POST)" required />
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="radio" name="correct_option" value="1" id="opt-radio-1" style="accent-color: #2e7d32; width: 18px; height: 18px;" />
+              <input type="text" class="form-input" id="opt-text-1" placeholder="Option B (e.g. GET)" required />
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="radio" name="correct_option" value="2" id="opt-radio-2" style="accent-color: #2e7d32; width: 18px; height: 18px;" />
+              <input type="text" class="form-input" id="opt-text-2" placeholder="Option C (e.g. PUT)" required />
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="radio" name="correct_option" value="3" id="opt-radio-3" style="accent-color: #2e7d32; width: 18px; height: 18px;" />
+              <input type="text" class="form-input" id="opt-text-3" placeholder="Option D (e.g. DELETE)" required />
+            </div>
+          </div>
+
+          <div class="form-error" id="add-question-error" hidden></div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+            <button class="btn btn--orange btn--sm" type="submit" id="btn-submit-add-question">
+              Add Question to Assessment
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--outline btn--sm" type="button" data-modal-close>Done / Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Confirmation Dialog -->
   <div class="modal-backdrop" id="modal-confirm" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-confirm-title">
     <div class="modal" style="max-width: 440px;">

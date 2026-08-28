@@ -1,8 +1,6 @@
-# Development and test dependencies. Install on top of requirements.txt:
-#   pip install -r requirements.txt -r requirements-dev.txt
-
 pytest>=8.2.0,<9.0.0
 pytest-asyncio>=0.23.6,<0.25.0
+aiosqlite>=0.20.0,<0.23.0
 
 # httpx is already a runtime dependency; it doubles as the ASGI test transport
 # for FastAPI's TestClient/AsyncClient.

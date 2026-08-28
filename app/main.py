@@ -79,6 +79,8 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
             await conn.execute(text("select 1"))
             # Ensure non-destructive schema additions for notifications and trainer_profiles
             await conn.execute(text("""
+                ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS employee_id VARCHAR(50);
+
                 ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS summary TEXT;
                 ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS category VARCHAR(100);
                 ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'published';

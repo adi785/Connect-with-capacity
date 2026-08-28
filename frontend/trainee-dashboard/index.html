@@ -88,7 +88,7 @@
 
       <div class="shell dash-body">
         <nav class="dash-nav" id="dash-nav" aria-label="Dashboard sections">
-          <span class="dash-nav__label">Trainee</span>
+          <span class="dash-nav__label">Trainee Workspace</span>
           <ul class="dash-nav__list">
             <li>
               <a class="dash-nav__link is-active" href="#overview" aria-current="page">
@@ -108,7 +108,22 @@
               </a>
             </li>
             <li>
-              <a class="dash-nav__link" href="#my-courses">
+              <a class="dash-nav__link" href="#catalog" id="nav-link-catalog">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  aria-hidden="true"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                Browse Courses
+              </a>
+            </li>
+            <li>
+              <a class="dash-nav__link" href="#my-courses" id="nav-link-my-courses">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -123,7 +138,7 @@
               </a>
             </li>
             <li>
-              <a class="dash-nav__link" href="#certificates">
+              <a class="dash-nav__link" href="#certificates" id="nav-link-certificates">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -138,7 +153,7 @@
               </a>
             </li>
             <li>
-              <a class="dash-nav__link" href="#announcements">
+              <a class="dash-nav__link" href="#announcements" id="nav-link-announcements">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -153,7 +168,7 @@
               </a>
             </li>
             <li>
-              <a class="dash-nav__link" href="#profile">
+              <a class="dash-nav__link" href="#profile" id="nav-link-profile">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -178,15 +193,16 @@
               Welcome back, <span id="welcome-name">there</span>.
             </h1>
             <p class="welcome__text">
-              Track your enrolled programmes, pick up where you left off and
+              Track your enrolled programmes, browse the catalogue, pick up where you left off and
               collect your certificates as you complete each course.
             </p>
             <div class="welcome__actions">
-              <a class="btn btn--orange btn--sm" href="#my-courses">
-                View my courses
+              <a class="btn btn--orange btn--sm" href="#catalog">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Browse Course Catalog
               </a>
-              <a class="btn btn--ghost-light btn--sm" href="../homepage/index.html#courses">
-                Explore learning areas
+              <a class="btn btn--ghost-light btn--sm" href="#my-courses">
+                My Enrolled Courses
               </a>
             </div>
           </section>
@@ -283,24 +299,59 @@
             <div class="panel__body" id="resume-body"></div>
           </section>
 
-          <!-- My courses --------------------------------------------------- -->
-          <section class="panel" id="my-courses" aria-labelledby="courses-title">
+          <!-- Course Catalog (Browse & Self-Enroll) ------------------------- -->
+          <section class="panel" id="catalog" aria-labelledby="catalog-title" hidden>
             <div class="panel__head">
               <div class="panel__titles">
-                <h2 class="panel__title" id="courses-title">My courses</h2>
-                <p class="panel__sub">Everything you are currently enrolled in.</p>
+                <h2 class="panel__title" id="catalog-title">Course Catalog</h2>
+                <p class="panel__sub">Explore and enroll in published programmes delivered by certified trainers.</p>
               </div>
+            </div>
+            
+            <div class="filter-bar">
+              <div class="filter-bar__search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="search" class="form-input" id="catalog-search" placeholder="Search available courses…" aria-label="Search courses" />
+              </div>
+              <div class="filter-bar__actions">
+                <select class="form-select" id="catalog-subject-filter" aria-label="Filter by subject">
+                  <option value="">All Subjects</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="panel__body panel__body--flush" id="catalog-body"></div>
+          </section>
+
+          <!-- My courses --------------------------------------------------- -->
+          <section class="panel" id="my-courses" aria-labelledby="courses-title" hidden>
+            <div class="panel__head">
+              <div class="panel__titles">
+                <h2 class="panel__title" id="courses-title">My Enrolled Courses</h2>
+                <p class="panel__sub">Programmes and curricula you are currently enrolled in.</p>
+              </div>
+              <a class="btn btn--orange btn--sm" href="#catalog">
+                + Browse More Courses
+              </a>
             </div>
             <div class="panel__body panel__body--flush" id="courses-body"></div>
           </section>
 
+          <!-- Course Study Room (Curriculum & Study Materials) ------------- -->
+          <section class="panel" id="course-study" aria-labelledby="study-title" hidden>
+            <div id="study-body"></div>
+          </section>
+
           <!-- Certificates ------------------------------------------------- -->
-          <section class="panel" id="certificates" aria-labelledby="certs-title">
+          <section class="panel" id="certificates" aria-labelledby="certs-title" hidden>
             <div class="panel__head">
               <div class="panel__titles">
-                <h2 class="panel__title" id="certs-title">My certificates</h2>
+                <h2 class="panel__title" id="certs-title">My Certificates</h2>
                 <p class="panel__sub">
-                  Issued automatically when you complete a course.
+                  Official certificates of completion issued automatically upon course completion.
                 </p>
               </div>
             </div>
@@ -324,12 +375,15 @@
           <section class="panel" id="profile" aria-labelledby="profile-title" hidden>
             <div class="panel__head">
               <div class="panel__titles">
-                <h2 class="panel__title" id="profile-title">My profile</h2>
+                <h2 class="panel__title" id="profile-title">My Professional Profile</h2>
                 <p class="panel__sub">
-                  Details held on your account record. Contact your administrator
-                  to request a change.
+                  Your credentials, education, work experience, skills and domain interests.
                 </p>
               </div>
+              <button class="btn btn--orange btn--sm" type="button" id="btn-open-edit-profile">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                Edit Profile
+              </button>
             </div>
             <div class="panel__body" id="profile-body"></div>
           </section>
@@ -347,6 +401,85 @@
         </div>
       </footer>
     </div>
+
+    <!-- =========================================================================
+         MODALS
+         ========================================================================= -->
+
+    <!-- Modal: Take Assessment Runner -->
+    <div class="modal-backdrop" id="modal-take-assessment" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-take-assessment-title">
+      <div class="modal modal--lg" style="max-width: 760px;">
+        <div class="modal__header">
+          <h3 class="modal__title" id="modal-take-assessment-title">Course Assessment</h3>
+          <button class="modal__close" type="button" data-modal-close aria-label="Close modal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="modal__body" id="assessment-runner-body" style="max-height: 75vh; overflow-y: auto;">
+          <!-- Injected dynamically by app.js -->
+        </div>
+        <div class="modal__footer" id="assessment-runner-footer">
+          <button class="btn btn--outline btn--sm" type="button" data-modal-close>Cancel</button>
+          <button class="btn btn--orange btn--sm" type="button" id="btn-submit-attempt">
+            Submit Assessment
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Edit Trainee Profile & Sub-records -->
+    <div class="modal-backdrop" id="modal-edit-trainee-profile" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-edit-trainee-profile-title">
+      <div class="modal modal--lg" style="max-width: 720px;">
+        <div class="modal__header">
+          <h3 class="modal__title" id="modal-edit-trainee-profile-title">Edit Professional Profile</h3>
+          <button class="modal__close" type="button" data-modal-close aria-label="Close modal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <form id="form-edit-trainee-profile">
+          <div class="modal__body" style="max-height: 75vh; overflow-y: auto;">
+            <div class="form-group">
+              <label class="form-label" for="trainee-headline">Professional Headline</label>
+              <input type="text" class="form-input" id="trainee-headline" name="headline" placeholder="e.g. Senior Software Engineer · Cloud &amp; Microservices" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="trainee-bio">Biography / Summary</label>
+              <textarea class="form-textarea" id="trainee-bio" name="bio" rows="3" placeholder="Brief summary of your background, career focus and goals…"></textarea>
+            </div>
+
+            <hr style="border:0; border-top:1px solid var(--border); margin: 20px 0;" />
+            <h4 style="font-size: 0.9375rem; color: var(--primary-blue-dark); margin: 0 0 10px 0;">Add Qualification</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 100px; gap: 10px; margin-bottom: 14px;">
+              <input type="text" class="form-input" id="new-qual-degree" placeholder="Degree / Certificate (e.g. B.Tech CS)" />
+              <input type="text" class="form-input" id="new-qual-inst" placeholder="Institution / University" />
+              <input type="number" class="form-input" id="new-qual-year" placeholder="Year" min="1970" max="2035" />
+            </div>
+            <button class="btn btn--outline btn--sm" type="button" id="btn-add-qual" style="margin-bottom: 18px;">+ Save Qualification</button>
+
+            <hr style="border:0; border-top:1px solid var(--border); margin: 10px 0 20px 0;" />
+            <h4 style="font-size: 0.9375rem; color: var(--primary-blue-dark); margin: 0 0 10px 0;">Add Work Experience</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 120px; gap: 10px; margin-bottom: 14px;">
+              <input type="text" class="form-input" id="new-exp-title" placeholder="Job Title (e.g. Systems Engineer)" />
+              <input type="text" class="form-input" id="new-exp-company" placeholder="Organization / Company" />
+              <input type="number" class="form-input" id="new-exp-year" placeholder="Start Year" min="1970" max="2035" />
+            </div>
+            <button class="btn btn--outline btn--sm" type="button" id="btn-add-exp" style="margin-bottom: 18px;">+ Save Experience</button>
+
+            <div class="form-error" id="edit-profile-error" hidden></div>
+          </div>
+          <div class="modal__footer">
+            <button class="btn btn--outline btn--sm" type="button" data-modal-close>Close</button>
+            <button class="btn btn--orange btn--sm" type="submit" id="btn-submit-save-profile">
+              Save Headline &amp; Bio
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
     <!-- Existing Supabase connection and Auth object are reused as-is. -->
     <script src="../shared/api-config.js"></script>

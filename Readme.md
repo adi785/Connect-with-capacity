@@ -115,6 +115,11 @@ The container exposes port `8000` and uses `/health` as its liveness check.
 - [System design](docs/system-design.md)
 - [Environment variable reference](.env.example)
 
-## License
+## Licensing
 
-This project is licensed under the [Apache License 2.0](LICENSE).
+This repository uses separate licenses by component:
+
+- **Backend and repository infrastructure:** [Apache License 2.0](LICENSE)
+- **Frontend:** [MIT License](frontend/LICENSE)
+
+These licenses apply only to the component identified above. Third-party dependencies remain subject to their own licenses.

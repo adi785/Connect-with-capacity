@@ -12,6 +12,6 @@
   },
   "keywords": ["capacity-connect", "fastapi", "react", "vite"],
   "author": "Capacity Connect Team",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "type": "module"
 }

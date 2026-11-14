@@ -117,4 +117,4 @@ The container exposes port `8000` and uses `/health` as its liveness check.
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [Apache License 2.0](LICENSE).

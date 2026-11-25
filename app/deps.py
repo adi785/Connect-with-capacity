@@ -115,13 +115,21 @@ async def get_or_create_profile(db: AsyncSession, token: VerifiedToken) -> Profi
 
     New accounts land as `status='pending'` and stay unusable for core actions
     until an admin approves them (FR-1.7). Emails in BOOTSTRAP_ADMIN_EMAILS are
-    promoted straight to approved admin, otherwise nobody could approve the first user.
+    promoted to approved admin even when the Supabase auth-sync trigger created
+    their profile before this first API sign-in.
     """
     email = (token.email or f"{token.uid}@unknown.local").lower().strip()
     is_bootstrap_admin = email in settings.admin_emails
 
     initial_role = "admin" if is_bootstrap_admin else token.raw_claims.get("role", "trainee")
     initial_status = "approved" if (is_bootstrap_admin or token.raw_claims.get("status") == "approved") else "pending"
+
+    async def promote_bootstrap_admin(profile: Profile) -> None:
+        """Apply the trusted bootstrap allowlist after any auth-triggered profile insert."""
+        if is_bootstrap_admin and (profile.role != "admin" or profile.status != "approved"):
+            profile.role = "admin"
+            profile.status = "approved"
+            await db.flush()
 
     profile = await db.scalar(
         select(Profile).where(
@@ -140,6 +148,7 @@ async def get_or_create_profile(db: AsyncSession, token: VerifiedToken) -> Profi
             profile.role = token.raw_claims["role"]
             profile.status = token.raw_claims.get("status", "approved")
             await db.flush()
+        await promote_bootstrap_admin(profile)
         return profile
 
     profile = Profile(
@@ -167,6 +176,7 @@ async def get_or_create_profile(db: AsyncSession, token: VerifiedToken) -> Profi
             if existing.firebase_uid != token.uid:
                 existing.firebase_uid = token.uid
                 await db.flush()
+            await promote_bootstrap_admin(existing)
             return existing
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

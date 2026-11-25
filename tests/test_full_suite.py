@@ -1,8 +1,15 @@
 import base64
 import json
 import uuid
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
 import pytest
 from httpx import AsyncClient
+
+from app.core.config import settings
+from app.core.security import VerifiedToken
+from app.deps import get_or_create_profile
 
 
 def create_dev_token(uid: str, email: str, role: str, name: str = "Test User", status: str = "approved") -> str:
@@ -314,3 +321,30 @@ async def test_course_management_e2e(client: AsyncClient):
     assert result_data["score"] == 100
     assert result_data["obtained_marks"] == 10
     assert result_data["total_marks"] == 10
+
+@pytest.mark.asyncio
+async def test_bootstrap_admin_promotes_profile_created_by_auth_sync(monkeypatch):
+    """The trusted bootstrap allowlist must work when Supabase already inserted the profile."""
+    monkeypatch.setattr(settings, "bootstrap_admin_emails", "bootstrap@example.gov")
+
+    profile = SimpleNamespace(
+        firebase_uid="bootstrap-user-001",
+        role="trainee",
+        status="pending",
+    )
+    db = SimpleNamespace(
+        scalar=AsyncMock(return_value=profile),
+        flush=AsyncMock(),
+    )
+    token = VerifiedToken(
+        uid="bootstrap-user-001",
+        email="bootstrap@example.gov",
+        raw_claims={"role": "trainee", "status": "pending"},
+    )
+
+    resolved = await get_or_create_profile(db, token)
+
+    assert resolved.role == "admin"
+    assert resolved.status == "approved"
+    assert db.flush.await_count == 2
+

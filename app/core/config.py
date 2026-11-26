@@ -22,6 +22,8 @@ class Settings(BaseSettings):
 
     # ---------- App ----------
     env: str = Field(default="development", alias="ENV")
+    # Required by the production startup safety check; never use the development placeholder in production.
+    secret_key: str = Field(default="dev-insecure-change-me", alias="SECRET_KEY")
     cors_origins: str = Field(
         default="http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500,http://localhost:5173,http://localhost:8000,http://127.0.0.1:8000,https://capacity-connect-three.vercel.app",
         alias="CORS_ORIGINS",

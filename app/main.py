@@ -44,8 +44,8 @@ def _assert_production_is_safe() -> None:
         problems.append(
             "Supabase Auth is unconfigured (set SUPABASE_URL, SUPABASE_ANON_KEY/SUPABASE_PUBLISHABLE_KEY, SUPABASE_JWKS_URL or SUPABASE_JWT_SECRET)"
         )
-    if settings.secret_key == "dev-insecure-change-me":
-        problems.append("SECRET_KEY is still the development default")
+    if not settings.secret_key or settings.secret_key == "dev-insecure-change-me":
+        problems.append("SECRET_KEY is unset or still the development default")
 
     if problems:
         raise RuntimeError(

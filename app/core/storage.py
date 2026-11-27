@@ -104,18 +104,26 @@ def build_object_path(*parts: str, filename: str) -> str:
 
 
 def _require_config() -> None:
-    if not settings.supabase_url or not settings.supabase_service_role_key:
+    if not settings.supabase_url or not settings.effective_service_role_key:
         raise AppError(
             503,
-            "File storage is not configured. Set SUPABASE_URL and "
-            "SUPABASE_SERVICE_ROLE_KEY to enable uploads.",
+            "File storage is not configured. Set SUPABASE_URL and either "
+            "SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY to enable uploads.",
             code="storage_unconfigured",
         )
 
 
 def _headers() -> dict[str, str]:
-    key = settings.supabase_service_role_key
-    return {"Authorization": f"Bearer {key}", "apikey": key}
+    key = settings.effective_service_role_key
+    headers = {"apikey": key}
+
+    # Legacy service_role keys are JWTs and remain valid in Authorization.
+    # New sb_secret keys are opaque API keys, not JWTs, so they must only be
+    # sent through apikey or Supabase rejects the request as an invalid JWT.
+    if settings.supabase_service_role_key:
+        headers["Authorization"] = f"Bearer {settings.supabase_service_role_key}"
+
+    return headers
 
 
 def _storage_base() -> str:

@@ -65,7 +65,11 @@ def _token_cache_expires_at(token: str, now: float) -> float | None:
     if isinstance(exp, bool) or not isinstance(exp, (int, float)):
         return None
 
-    expires_at = float(exp)
+    try:
+        expires_at = float(exp)
+    except (OverflowError, ValueError):
+        return None
+
     if not math.isfinite(expires_at) or expires_at <= now:
         return None
 

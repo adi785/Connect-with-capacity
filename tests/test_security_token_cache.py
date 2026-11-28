@@ -116,3 +116,27 @@ def test_jwt_without_numeric_exp_is_not_cached(monkeypatch, supabase_mode):
     verify_supabase_token(token)
 
     assert len(verification_calls) == 2
+
+def test_jwt_with_unrepresentable_exp_is_not_cached(monkeypatch, supabase_mode):
+    now = [1_700_000_000.0]
+    token = _make_jwt(exp=10**400)
+    verification_calls = []
+
+    monkeypatch.setattr(
+        security,
+        "time",
+        SimpleNamespace(time=lambda: now[0]),
+    )
+    monkeypatch.setattr(
+        security,
+        "_verify_with_supabase",
+        lambda _token: (
+            verification_calls.append(_token)
+            or VerifiedToken(uid="test-user", raw_claims={})
+        ),
+    )
+
+    verify_supabase_token(token)
+    verify_supabase_token(token)
+
+    assert len(verification_calls) == 2

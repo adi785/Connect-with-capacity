@@ -14,6 +14,7 @@ import base64
 import binascii
 import json
 import logging
+import math
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -28,8 +29,51 @@ logger = logging.getLogger(__name__)
 
 _jwks_client: jwt.PyJWKClient | None = None
 _token_cache: dict[str, tuple[float, "VerifiedToken"]] = {}
-_TOKEN_CACHE_TTL = 60.0  # Cache verified tokens for 60 seconds
+_TOKEN_CACHE_TTL = 60.0  # Maximum cache lifetime for verified tokens
 _MAX_TOKEN_CACHE_SIZE = 1000
+
+
+def _token_cache_expires_at(token: str, now: float) -> float | None:
+    """Return a safe cache deadline after the token has already been verified.
+
+    JWTs are cached only until the earlier of their exp claim and the normal
+    cache TTL. The unverified decode below is used solely to shorten the cache
+    lifetime; signature and claim validation still happens first in the normal
+    verification path. JWTs without a usable exp are not cached.
+    Non-JWT development tokens retain the short development-only TTL.
+    """
+    if token.count(".") != 2:
+        return now + _TOKEN_CACHE_TTL
+
+    try:
+        claims = jwt.decode(
+            token,
+            algorithms=["HS256", "RS256", "ES256", "EdDSA"],
+            options={
+                "verify_signature": False,
+                "verify_exp": False,
+                "verify_nbf": False,
+                "verify_iat": False,
+                "verify_aud": False,
+                "verify_iss": False,
+            },
+        )
+    except (jwt.PyJWTError, TypeError, ValueError):
+        return None
+
+    exp = claims.get("exp")
+    if isinstance(exp, bool) or not isinstance(exp, (int, float)):
+        return None
+
+    try:
+        expires_at = float(exp)
+    except (OverflowError, ValueError):
+        return None
+
+    if not math.isfinite(expires_at) or expires_at <= now:
+        return None
+
+    return min(now + _TOKEN_CACHE_TTL, expires_at)
 
 
 @dataclass(slots=True)
@@ -252,29 +296,34 @@ def verify_supabase_token(token: str) -> VerifiedToken:
     now = time.time()
     cached = _token_cache.get(raw)
     if cached is not None:
-        cached_time, verified_token = cached
-        if now - cached_time < _TOKEN_CACHE_TTL:
+        cache_expires_at, verified_token = cached
+        if now < cache_expires_at:
             return verified_token
-        else:
-            _token_cache.pop(raw, None)
+        _token_cache.pop(raw, None)
 
     if settings.resolved_auth_mode == "dev" or (not settings.is_production and raw.count(".") != 2):
         verified = _verify_dev(raw)
     else:
         verified = _verify_with_supabase(raw)
 
-    if len(_token_cache) >= _MAX_TOKEN_CACHE_SIZE:
-        # Simple prune: remove oldest 20%
-        expired_keys = [k for k, (t, _) in _token_cache.items() if now - t >= _TOKEN_CACHE_TTL]
-        if expired_keys:
-            for k in expired_keys:
-                _token_cache.pop(k, None)
-        else:
-            to_remove = list(_token_cache.keys())[:200]
-            for k in to_remove:
-                _token_cache.pop(k, None)
+    cache_expires_at = _token_cache_expires_at(raw, now)
+    if cache_expires_at is not None:
+        if len(_token_cache) >= _MAX_TOKEN_CACHE_SIZE:
+            expired_keys = [
+                key
+                for key, (expires_at, _) in _token_cache.items()
+                if now >= expires_at
+            ]
+            if expired_keys:
+                for key in expired_keys:
+                    _token_cache.pop(key, None)
+            else:
+                # Bound memory use even when every cached token is still valid.
+                for key in list(_token_cache)[:200]:
+                    _token_cache.pop(key, None)
 
-    _token_cache[raw] = (now, verified)
+        _token_cache[raw] = (cache_expires_at, verified)
+
     return verified
 
 
